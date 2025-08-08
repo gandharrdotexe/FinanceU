@@ -368,7 +368,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </motion.div>
-{/* 
+
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -400,7 +400,7 @@ export default function Dashboard() {
                       </Link>
                     </div>
                   </div>
-                </motion.div> */}
+                </motion.div>
               </div>
             </div>
           </TabPanel>

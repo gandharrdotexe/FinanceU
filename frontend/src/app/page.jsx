@@ -1,36 +1,14 @@
 'use client' // This is needed for client-side interactivity
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Target, Bot, Trophy, TrendingUp, Users } from 'lucide-react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { useTheme } from '../contexts/ThemeContext';
 import './globals.css'
 
 export default function HomePage() {
-  const [theme, setTheme] = useState('light');
-
-  useEffect(() => {
-    // Check for saved theme preference or use system preference
-    const savedTheme = localStorage.getItem('theme') || 
-                      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setTheme(savedTheme);
-  }, []);
-
-  useEffect(() => {
-    // Apply the theme class to the document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    // Save the theme preference
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  const { theme, toggleTheme } = useTheme();
 
   // Animation variants
   const containerVariants = {

@@ -13,6 +13,8 @@ import {
   Award
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTheme, toggleTheme } from '../../contexts/ThemeContext'
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 
 // Animation variants
 const containerVariants = {
@@ -82,6 +84,7 @@ export default function Dashboard() {
   })
 
   const [tabValue, setTabValue] = useState(0)
+  const { theme, toggleTheme } = useTheme()
 
   const handleTabChange = (newValue) => {
     setTabValue(newValue)
@@ -127,14 +130,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}>
       {/* Header */}
       <motion.div
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100 }}
       >
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <header className={`bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50`}>
           <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 no-underline">
               <motion.div
@@ -151,16 +154,27 @@ export default function Dashboard() {
             
             <div className="flex items-center gap-4">
               <motion.div whileHover={{ scale: 1.1 }}>
-                <div className="flex items-center bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+                <div className="flex items-center bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full">
                   <Zap className="w-4 h-4 mr-1" />
                   <span className="text-sm font-medium">{userStats.xp} XP</span>
                 </div>
               </motion.div>
               <motion.div whileHover={{ scale: 1.1 }}>
-                <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full">
+                <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full">
                   <span className="text-sm font-medium">Level {userStats.level}</span>
                 </div>
               </motion.div>
+              <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? (
+                  <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                ) : (
+                  <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                )}
+              </button>
             </div>
           </div>
         </header>
@@ -174,8 +188,8 @@ export default function Dashboard() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold mb-2">Welcome back, Alex! 👋</h1>
-          <p className="text-gray-600">You're on a {userStats.streak}-day learning streak! Keep it up!</p>
+          <h1 className="text-3xl font-bold mb-2 dark:text-white">Welcome back, Alex! 👋</h1>
+          <p className="text-gray-600 dark:text-gray-300">You're on a {userStats.streak}-day learning streak! Keep it up!</p>
         </motion.div>
 
         {/* Stats Overview */}
@@ -264,7 +278,7 @@ export default function Dashboard() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
         >
-          <div className="bg-white rounded-lg p-2 mb-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-2 mb-6 shadow-sm">
             <div className="flex space-x-1">
               {['Learn', 'Budget', 'Goals', 'AI Mentor'].map((tab, index) => (
                 <button
@@ -273,7 +287,7 @@ export default function Dashboard() {
                   className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                     tabValue === index 
                       ? 'bg-purple-600 text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   {tab}
@@ -290,9 +304,9 @@ export default function Dashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-bold mb-2">Continue Learning</h3>
-                    <p className="text-gray-600 mb-4">Pick up where you left off</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                    <h3 className="text-lg font-bold mb-2 dark:text-white">Continue Learning</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Pick up where you left off</p>
                     
                     <div className="space-y-4">
                       {recentLessons.map((lesson, index) => (
@@ -303,21 +317,21 @@ export default function Dashboard() {
                           transition={{ delay: index * 0.1 }}
                           whileHover={{ scale: 1.02 }}
                         >
-                          <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-between border">
+                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex items-center justify-between border dark:border-gray-600">
                             <div className="flex-1">
-                              <p className="font-medium">{lesson.title}</p>
+                              <p className="font-medium dark:text-white">{lesson.title}</p>
                               <div className="flex items-center gap-2 mt-2">
-                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                                   <div 
                                     className="bg-green-500 h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${lesson.progress}%` }}
                                   />
                                 </div>
-                                <span className="text-gray-600 text-sm">{lesson.progress}%</span>
+                                <span className="text-gray-600 dark:text-gray-300 text-sm">{lesson.progress}%</span>
                               </div>
                             </div>
                             <div className="ml-4 text-right">
-                              <p className="text-gray-600 text-sm">+{lesson.xp} XP</p>
+                              <p className="text-gray-600 dark:text-gray-300 text-sm">+{lesson.xp} XP</p>
                               <Link href={`/lessons/${index + 1}`} className="no-underline">
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                   <button className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
@@ -340,9 +354,9 @@ export default function Dashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-bold mb-2">Your Badges</h3>
-                    <p className="text-gray-600 mb-4">Achievements unlocked</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                    <h3 className="text-lg font-bold mb-2 dark:text-white">Your Badges</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Achievements unlocked</p>
                     
                     <div className="grid grid-cols-2 gap-3">
                       {badges.map((badge, index) => (
@@ -355,11 +369,11 @@ export default function Dashboard() {
                         >
                           <div className={`p-3 text-center border rounded-lg ${
                             badge.earned
-                              ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 border-yellow-300'
-                              : 'bg-gray-100 border-gray-200'
+                              ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/50 dark:to-yellow-800/50 border-yellow-300 dark:border-yellow-600'
+                              : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                           }`}>
                             <div className="text-2xl mb-1">{badge.icon}</div>
-                            <p className={`text-xs font-medium ${badge.earned ? 'text-yellow-800' : 'text-gray-500'}`}>
+                            <p className={`text-xs font-medium ${badge.earned ? 'text-yellow-800 dark:text-yellow-200' : 'text-gray-500 dark:text-gray-400'}`}>
                               {badge.name}
                             </p>
                           </div>
@@ -374,9 +388,9 @@ export default function Dashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-bold mb-2">Weekly Challenge</h3>
-                    <p className="text-gray-600 mb-4">Complete to earn bonus XP</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                    <h3 className="text-lg font-bold mb-2 dark:text-white">Weekly Challenge</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Complete to earn bonus XP</p>
                     
                     <div className="text-center">
                       <motion.div
@@ -386,11 +400,11 @@ export default function Dashboard() {
                       >
                         💰
                       </motion.div>
-                      <p className="font-medium mb-2">Track expenses for 7 days</p>
-                      <div className="bg-gray-200 rounded-full h-2 mb-2">
+                      <p className="font-medium mb-2 dark:text-white">Track expenses for 7 days</p>
+                      <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
                         <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
                       </div>
-                      <p className="text-gray-600 text-sm mb-3">4/7 days completed</p>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">4/7 days completed</p>
                       <Link href="/budget-planner" className="no-underline">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
@@ -411,19 +425,19 @@ export default function Dashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-bold mb-2">Student Budget Planner</h3>
-                <p className="text-gray-600 mb-6">Track your income and expenses</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-bold mb-2 dark:text-white">Student Budget Planner</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">Track your income and expenses</p>
                 
                 <div className="text-center py-12">
                   <motion.div
                     animate={{ y: [0, -10, 0] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <Target size={64} className="text-gray-400 mx-auto mb-4" />
+                    <Target size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                   </motion.div>
-                  <h4 className="text-lg font-medium mb-2">Budget Planner Coming Soon</h4>
-                  <p className="text-gray-600 mb-4">Track your part-time job income, allowances, and student expenses</p>
+                  <h4 className="text-lg font-medium mb-2 dark:text-white">Budget Planner Coming Soon</h4>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">Track your part-time job income, allowances, and student expenses</p>
                   <Link href="/budget-planner" className="no-underline">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
@@ -442,19 +456,19 @@ export default function Dashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-bold mb-2">Financial Goals</h3>
-                <p className="text-gray-600 mb-6">Set and track your savings goals</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-bold mb-2 dark:text-white">Financial Goals</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">Set and track your savings goals</p>
                 
                 <div className="text-center py-12">
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <TrendingUp size={64} className="text-gray-400 mx-auto mb-4" />
+                    <TrendingUp size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                   </motion.div>
-                  <h4 className="text-lg font-medium mb-2">Goal Tracking Coming Soon</h4>
-                  <p className="text-gray-600 mb-4">Save for that laptop, trip, or emergency fund with visual progress</p>
+                  <h4 className="text-lg font-medium mb-2 dark:text-white">Goal Tracking Coming Soon</h4>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">Save for that laptop, trip, or emergency fund with visual progress</p>
                   <Link href="/goals" className="no-underline">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
@@ -473,19 +487,19 @@ export default function Dashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-bold mb-2">AI Financial Mentor</h3>
-                <p className="text-gray-600 mb-6">Get personalized advice and quick answers</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-bold mb-2 dark:text-white">AI Financial Mentor</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">Get personalized advice and quick answers</p>
                 
                 <div className="text-center py-12">
                   <motion.div
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity }}
                   >
-                    <Bot size={64} className="text-gray-400 mx-auto mb-4" />
+                    <Bot size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                   </motion.div>
-                  <h4 className="text-lg font-medium mb-2">Your AI Mentor is Ready</h4>
-                  <p className="text-gray-600 mb-4">Ask questions about budgeting, investing, or any financial topic</p>
+                  <h4 className="text-lg font-medium mb-2 dark:text-white">Your AI Mentor is Ready</h4>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">Ask questions about budgeting, investing, or any financial topic</p>
                   <Link href="/mentor" className="no-underline">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md font-medium transition-colors">

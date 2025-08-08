@@ -1,8 +1,33 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, PlusCircle, Trash2 } from 'lucide-react';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Button,
+  TextField,
+  InputLabel,
+  Select,
+  MenuItem,
+  Badge,
+  Tabs,
+  Tab,
+  Box,
+  Paper,
+  Divider,
+  IconButton
+} from '@mui/material';
+import {
+  AddCircle as PlusCircle,
+  Delete as Trash2,
+  TrendingUp,
+  TrendingDown,
+  AttachMoney as DollarSign
+} from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import Link from 'next/link';
 
@@ -40,6 +65,30 @@ const cardVariants = {
 };
 
 export default function BudgetPlannerPage() {
+    const [theme, setTheme] = useState('light');
+
+    useEffect(() => {
+      // Check for saved theme preference or use system preference
+      const savedTheme = localStorage.getItem('theme') || 
+                        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      setTheme(savedTheme);
+    }, []);
+
+    useEffect(() => {
+      // Apply the theme class to the document
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      // Save the theme preference
+      localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(theme === 'light' ? 'dark' : 'light');
+      };
+  
   const [transactions, setTransactions] = useState([
     { id: '1', description: 'Part-time job', amount: 8000, category: 'Job', type: 'income', date: '2024-01-15' },
     { id: '2', description: 'Monthly allowance', amount: 3000, category: 'Allowance', type: 'income', date: '2024-01-01' },
@@ -58,7 +107,7 @@ export default function BudgetPlannerPage() {
 
   const [tabValue, setTabValue] = useState('overview');
 
-  const handleTabChange = (newValue) => {
+  const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
@@ -105,26 +154,40 @@ export default function BudgetPlannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
       <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100 }}
-        className="border-b border-gray-200 backdrop-blur-sm sticky top-0 z-50 bg-white/80"
+        className="border-b border-gray-200 dark:border-gray-700 backdrop-blur-sm sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80"
       >
         <div className="max-w-6xl mx-auto p-4 flex items-center justify-between">
           <Link href="/dashboard" className="no-underline flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">F</span>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:text-white">
               FinanceU
             </span>
           </Link>
-          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm font-medium">
+          <div className="flex items-center gap-2">
+          <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-3 py-1 rounded-md text-sm font-medium">
             Student Budget Planner
           </div>
+          <button 
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? (
+              <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            ) : (
+              <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            )}
+          </button>
+          </div>
+          
         </div>
       </motion.header>
 
@@ -136,8 +199,8 @@ export default function BudgetPlannerPage() {
           className="mb-8"
         >
           <motion.div variants={itemVariants}>
-            <h1 className="text-3xl font-bold mb-2">Budget Planner 💰</h1>
-            <p className="text-gray-600">Track your student income and expenses with the 50/30/20 rule</p>
+            <h1 className="text-3xl font-bold mb-2 dark:text-white">Budget Planner 💰</h1>
+            <p className="text-gray-600 dark:text-gray-300">Track your student income and expenses with the 50/30/20 rule</p>
           </motion.div>
         </motion.div>
 
@@ -149,11 +212,13 @@ export default function BudgetPlannerPage() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
         >
           <motion.div variants={itemVariants} whileHover="hover">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm">Total Income</p>
-                  <p className="text-2xl font-bold">₹{totalIncome.toLocaleString()}</p>
+                  <p className="text-green-100 text-sm font-medium">Total Income</p>
+                  <p className="text-2xl font-bold">
+                    ₹{totalIncome.toLocaleString()}
+                  </p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-200" />
               </div>
@@ -161,11 +226,13 @@ export default function BudgetPlannerPage() {
           </motion.div>
 
           <motion.div variants={itemVariants} whileHover="hover">
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-6">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-red-100 text-sm">Total Expenses</p>
-                  <p className="text-2xl font-bold">₹{totalExpenses.toLocaleString()}</p>
+                  <p className="text-red-100 text-sm font-medium">Total Expenses</p>
+                  <p className="text-2xl font-bold">
+                    ₹{totalExpenses.toLocaleString()}
+                  </p>
                 </div>
                 <TrendingDown className="w-8 h-8 text-red-200" />
               </div>
@@ -173,11 +240,19 @@ export default function BudgetPlannerPage() {
           </motion.div>
 
           <motion.div variants={itemVariants} whileHover="hover">
-            <div className={`bg-gradient-to-r ${balance >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white rounded-lg p-6`}>
+            <div className={`text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow ${
+              balance >= 0 
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600' 
+                : 'bg-gradient-to-r from-orange-500 to-orange-600'
+            }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`text-sm ${balance >= 0 ? 'text-blue-100' : 'text-orange-100'}`}>Balance</p>
-                  <p className="text-2xl font-bold">₹{balance.toLocaleString()}</p>
+                  <p className={`text-sm font-medium ${balance >= 0 ? 'text-blue-100' : 'text-orange-100'}`}>
+                    Balance
+                  </p>
+                  <p className="text-2xl font-bold">
+                    ₹{balance.toLocaleString()}
+                  </p>
                 </div>
                 <DollarSign className={`w-8 h-8 ${balance >= 0 ? 'text-blue-200' : 'text-orange-200'}`} />
               </div>
@@ -185,27 +260,52 @@ export default function BudgetPlannerPage() {
           </motion.div>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg p-2 mb-6 shadow-sm">
-          <div className="flex space-x-1">
-            {['overview', 'transactions', 'budget', 'add'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  tabValue === tab 
-                    ? 'bg-purple-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {tab === 'overview' && 'Overview'}
-                {tab === 'transactions' && 'Transactions'}
-                {tab === 'budget' && '50/30/20 Rule'}
-                {tab === 'add' && 'Add Transaction'}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Paper elevation={0} className="p-2 mb-6 dark:bg-gray-900/80 dark:text-white">
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange}
+            variant="fullWidth"
+            sx={{
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#7C3AED',
+                height: 3
+              }
+            }}
+          >
+            <Tab 
+              value="overview" 
+              label="Overview" 
+              sx={{ 
+                fontWeight: tabValue === 'overview' ? 'bold' : 'normal',
+                color: tabValue === 'overview' ? '#7C3AED' : 'inherit'
+              }} 
+            />
+            <Tab 
+              value="transactions" 
+              label="Transactions" 
+              sx={{ 
+                fontWeight: tabValue === 'transactions' ? 'bold' : 'normal',
+                color: tabValue === 'transactions' ? '#7C3AED' : 'inherit'
+              }} 
+            />
+            <Tab 
+              value="budget" 
+              label="50/30/20 Rule" 
+              sx={{ 
+                fontWeight: tabValue === 'budget' ? 'bold' : 'normal',
+                color: tabValue === 'budget' ? '#7C3AED' : 'inherit'
+              }} 
+            />
+            <Tab 
+              value="add" 
+              label="Add Transaction" 
+              sx={{ 
+                fontWeight: tabValue === 'add' ? 'bold' : 'normal',
+                color: tabValue === 'add' ? '#7C3AED' : 'inherit'
+              }} 
+            />
+          </Tabs>
+        </Paper>
 
         {tabValue === 'overview' && (
           <motion.div
@@ -214,11 +314,14 @@ export default function BudgetPlannerPage() {
             transition={{ duration: 0.5 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-6"
           >
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
-              <p className="text-gray-600 text-sm mb-4">Where your money goes</p>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="Expense Breakdown"
+                subheader="Where your money goes"
+                className="dark:text-white"
+              />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -237,29 +340,43 @@ export default function BudgetPlannerPage() {
                     <Tooltip formatter={(value) => `₹${value}`} />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
-              <p className="text-gray-600 text-sm mb-4">Your latest financial activity</p>
-              <div className="space-y-3">
-                {transactions.slice(-5).reverse().map((transaction) => (
-                  <div 
-                    key={transaction.id} 
-                    className="bg-gray-50 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-gray-500 text-sm">{transaction.category} • {transaction.date}</p>
-                    </div>
-                    <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="Recent Transactions"
+                subheader="Your latest financial activity"
+                className="dark:text-white"
+                
+              />
+              <CardContent>
+                <div className="grid gap-3 ">
+                  {transactions.slice(-5).reverse().map((transaction) => (
+                    <Paper 
+                      key={transaction.id} 
+                      elevation={1}
+                      className="p-4 flex items-center justify-between dark:bg-gray-800/80 dark:text-white"
+                    >
+                      <div>
+                        <Typography variant="body1" className="font-medium">
+                          {transaction.description}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary dark:text-white">
+                          {transaction.category} • {transaction.date}
+                        </Typography>
+                      </div>
+                      <Typography 
+                        variant="body1" 
+                        className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount}
+                      </Typography>
+                    </Paper>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
@@ -269,41 +386,62 @@ export default function BudgetPlannerPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">All Transactions</h3>
-              <p className="text-gray-600 text-sm mb-4">Manage your income and expenses</p>
-              <div className="space-y-3">
-                {transactions.map((transaction) => (
-                  <div 
-                    key={transaction.id}
-                    className="bg-gray-50 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          transaction.type === 'income' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {transaction.category}
-                        </span>
-                        <p className="font-medium">{transaction.description}</p>
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="All Transactions"
+                subheader="Manage your income and expenses"
+                className="dark:text-white"
+              />
+              <CardContent>
+                <div className="grid gap-3">
+                  {transactions.map((transaction) => (
+                    <Paper 
+                      key={transaction.id}
+                      elevation={1}
+                      className="p-4 flex items-center justify-between dark:bg-gray-800/80 dark:text-white"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <Badge 
+                            color={transaction.type === 'income' ? 'primary' : 'secondary'}
+                            badgeContent={transaction.category}
+                            sx={{ 
+                              '& .MuiBadge-badge': {
+                                backgroundColor: transaction.type === 'income' ? '#3B82F6' : '#6B7280',
+                                color: 'white',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '0.25rem'
+                              }
+                            }}
+                          />
+                          <Typography variant="body1" className="font-medium dark:text-white">
+                            {transaction.description}
+                          </Typography>
+                        </div>
+                        <Typography variant="body2" color="text.secondary" className="mt-2 dark:text-white">
+                          {transaction.date}
+                        </Typography>
                       </div>
-                      <p className="text-gray-500 text-sm mt-1">{transaction.date}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount}
-                      </p>
-                      <button
-                        onClick={() => deleteTransaction(transaction.id)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                      <div className="flex items-center gap-3">
+                        <Typography 
+                          variant="body1" 
+                          className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount}
+                        </Typography>
+                        <IconButton
+                          onClick={() => deleteTransaction(transaction.id)}
+                          color="error"
+                          size="small"
+                        >
+                          <Trash2 fontSize="small" />
+                        </IconButton>
+                      </div>
+                    </Paper>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
@@ -313,11 +451,14 @@ export default function BudgetPlannerPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">50/30/20 Budget Rule</h3>
-              <p className="text-gray-600 text-sm mb-4">How well are you following the recommended budget allocation?</p>
-              <div className="h-[400px] mb-6">
-                <ResponsiveContainer width="100%" height="100%">
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="50/30/20 Budget Rule"
+                subheader="How well are you following the recommended budget allocation?"
+                className="dark:text-white"
+                />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={budgetData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="category" />
@@ -327,25 +468,35 @@ export default function BudgetPlannerPage() {
                     <Bar dataKey="actual" fill="#10B981" name="Actual" />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="space-y-4">
-                {budgetData.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-gray-50 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <p className="font-medium">{item.category}</p>
-                    <div className="text-right">
-                      <p className="text-gray-600 text-sm">Budgeted: ₹{item.budgeted.toFixed(0)}</p>
-                      <p className="text-gray-600 text-sm">Actual: ₹{item.actual.toFixed(0)}</p>
-                      <p className={`text-sm font-medium ${item.actual <= item.budgeted ? 'text-green-600' : 'text-red-600'}`}>
-                        {item.actual <= item.budgeted ? '✅ On track' : '⚠️ Over budget'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                <Box className="mt-6 grid gap-4">
+                  {budgetData.map((item, index) => (
+                    <Paper 
+                      key={index} 
+                      elevation={0}
+                      className="p-4 bg-gray-50 rounded-lg flex items-center justify-between dark:bg-gray-800/80 dark:text-white"
+                    >
+                      <Typography variant="body1" className="font-medium">
+                        {item.category}
+                      </Typography>
+                      <div className="text-right">
+                        <Typography variant="body2" color="text.secondary dark:text-white">
+                          Budgeted: ₹{item.budgeted.toFixed(0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary dark:text-white">
+                          Actual: ₹{item.actual.toFixed(0)}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          className={`font-medium ${item.actual <= item.budgeted ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {item.actual <= item.budgeted ? '✅ On track' : '⚠️ Over budget'}
+                        </Typography>
+                      </div>
+                    </Paper>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
@@ -355,79 +506,94 @@ export default function BudgetPlannerPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
-              <p className="text-gray-600 text-sm mb-4">Record your income or expenses</p>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="Add New Transaction"
+                subheader="Record your income or expenses"
+                className="dark:text-white"
+                />
+              <CardContent>
+                <Box className="grid gap-6">
+                  <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <InputLabel htmlFor="type" className="dark:text-white">Type</InputLabel>
+                      <Select
+                        id="type"
+                        fullWidth
+                        value={newTransaction.type}
+                        onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
+                        className="mt-2"
+                      >
+                        <MenuItem value="expense">Expense</MenuItem>
+                        <MenuItem value="income">Income</MenuItem>
+                      </Select>
+                    </div>
+                    <div>
+                      <InputLabel htmlFor="amount" className="dark:text-white">Amount (₹)</InputLabel>
+                      <TextField
+                        id="amount"
+                        type="number"
+                        fullWidth
+                        placeholder="0"
+                        value={newTransaction.amount}
+                        onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                        className="mt-2"
+                      />
+                    </div>
+                  </Box>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-                    <select
-                      value={newTransaction.type}
-                      onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="expense">Expense</option>
-                      <option value="income">Income</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={newTransaction.amount}
-                      onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    <InputLabel htmlFor="description" className="dark:text-white">Description</InputLabel>
+                    <TextField
+                      id="description"
+                      fullWidth
+                      placeholder="e.g., Lunch at cafeteria"
+                      value={newTransaction.description}
+                      onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                      className="mt-2"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Lunch at cafeteria"
-                    value={newTransaction.description}
-                    onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={newTransaction.category}
-                    onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  <div>
+                    <InputLabel htmlFor="category" className="dark:text-white" >Category</InputLabel>
+                    <Select
+                      id="category"
+                      fullWidth
+                      value={newTransaction.category}
+                      onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
+                      className="mt-2 dark:text-white"
+                    >
+                      <MenuItem value="" className="dark:text-white">Select category</MenuItem>
+                      {newTransaction.type === 'income' ? [
+                        <MenuItem key="Job" value="Job">Part-time Job</MenuItem>,
+                        <MenuItem key="Allowance" value="Allowance">Allowance</MenuItem>,
+                        <MenuItem key="Freelance" value="Freelance">Freelance</MenuItem>,
+                        <MenuItem key="Other" value="Other">Other Income</MenuItem>
+                      ] : [
+                        <MenuItem key="Food" value="Food">Food & Groceries</MenuItem>,
+                        <MenuItem key="Transport" value="Transport">Transport</MenuItem>,
+                        <MenuItem key="Education" value="Education">Books & Education</MenuItem>,
+                        <MenuItem key="Entertainment" value="Entertainment">Entertainment</MenuItem>,
+                        <MenuItem key="Shopping" value="Shopping">Shopping</MenuItem>,
+                        <MenuItem key="Other" value="Other">Other Expenses</MenuItem>
+                      ]}
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={addTransaction}
+                    variant="contained"
+                    fullWidth
+                    startIcon={<PlusCircle />}
+                    sx={{
+                      background: 'linear-gradient(to right, #7C3AED, #6D28D9)',
+                      '&:hover': {
+                        background: 'linear-gradient(to right, #6D28D9, #5B21B6)'
+                      }
+                    }}
                   >
-                    <option value="">Select category</option>
-                    {newTransaction.type === 'income' ? (
-                      <>
-                        <option value="Job">Part-time Job</option>
-                        <option value="Allowance">Allowance</option>
-                        <option value="Freelance">Freelance</option>
-                        <option value="Other">Other Income</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Food">Food & Groceries</option>
-                        <option value="Transport">Transport</option>
-                        <option value="Education">Books & Education</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Other">Other Expenses</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-                <button 
-                  onClick={addTransaction}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  Add Transaction
-                </button>
-              </div>
-            </div>
+                    Add Transaction
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </div>

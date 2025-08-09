@@ -36,7 +36,13 @@ const userSchema = new mongoose.Schema({
     modulesCompleted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Module' }],
     currentModule: { type: mongoose.Schema.Types.ObjectId, ref: 'Module' },
     overallProgress: { type: Number, default: 0 }
-  }
+  },
+  financialProfile: {
+    monthlyIncome: Number,
+    monthlyExpenses: Number,
+    financialGoals: [String],
+    riskTolerance: String // low, medium, high
+  },
 }, {
   timestamps: true
 });

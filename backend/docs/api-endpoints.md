@@ -1,7 +1,7 @@
 // API ENDPOINTS STRUCTURE
 ```js
 // AUTHENTICATION ROUTES
-POST   /api/auth/register       // User registration
+POST   /api/auth/register       // User registration 
 POST   /api/auth/login          // User login
 POST   /api/auth/logout         // User logout
 POST   /api/auth/refresh        // Refresh JWT token
@@ -51,13 +51,15 @@ POST   /api/goals/[:id]/milestone // Add milestone to goal
 // CALCULATOR/TOOLS ROUTES
 POST   /api/tools/compound-interest // Compound interest calculator
 POST   /api/tools/emi-calculator    // EMI calculator
-POST   /api/tools/budget-analyzer   // Budget analysis
 POST   /api/tools/investment-advisor // Investment suggestions
 
 // AI CHATBOT ROUTES
-POST   /api/chat/message        // Send message to AI
-GET    /api/chat/history        // Get chat history
-DELETE /api/chat/history        // Clear chat history
+POST   /api/chat/message            // Send message to AI
+GET    /api/chat/history            // Get chat history
+POST   /api/chat/budget-analyzer    // Budget analysis
+GET    /api/chat/learning-path      // Personalized learning path
+GET    /api/chat/quick-tips         // Quick tips
+DELETE /api/chat/history            // Clear chat history
 
 // ANALYTICS ROUTES (for admin/insights)
 GET    /api/analytics/user-stats     // User engagement stats

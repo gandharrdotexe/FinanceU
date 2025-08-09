@@ -4,7 +4,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node scripts/seedDatabase.js",
+    "seed:modules": "node -e \"require('./scripts/seedDatabase').seedModulesOnly()\"",
+    "seed:badges": "node -e \"require('./scripts/seedDatabase').seedBadgesOnly()\"",
+    "seed:users": "node -e \"require('./scripts/seedDatabase').seedUsersOnly()\"",
+    "test:gemini": "node test/gemini-test.js"
   },
   "author": "",
   "license": "ISC",

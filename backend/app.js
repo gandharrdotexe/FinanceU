@@ -1,3 +1,4 @@
+// app.js (UPDATED - Add these lines)
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,6 +12,8 @@ const moduleRoutes = require('./routes/moduleRoute');
 const budgetRoutes = require('./routes/budgetRoute');
 const gamificationRoutes = require('./routes/gamificationRoute');
 const chatRoutes = require('./routes/chatRoute');
+const goalRoutes = require('./routes/goalRoute');        
+const toolsRoutes = require('./routes/toolsRoute');  
 
 const app = express();
 
@@ -30,10 +33,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -44,6 +44,17 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/goals', goalRoutes);        
+app.use('/api/tools', toolsRoutes);       
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'FinanceU API is healthy!',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -55,10 +66,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.use("/",(req,res) =>{
-    res.status(200).send("Welcome to FinanceU API! :)")
-});
-
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
@@ -68,3 +75,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = app;

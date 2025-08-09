@@ -1,20 +1,28 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { 
+  getAllModules, 
+  getModule, 
+  startModule, 
+  completeModule, 
+  submitQuiz 
+} = require('../controllers/moduleController');
+
 const router = express.Router();
 
 // Get all modules
-router.get('/', auth, (req, res) => {
-  res.json({ success: true, message: 'Get modules endpoint' });
-});
+router.get('/', auth, getAllModules);
 
 // Get specific module
-router.get('/:id', auth, (req, res) => {
-  res.json({ success: true, message: 'Get specific module endpoint' });
-});
+router.get('/:id', auth, getModule);
+
+// Start a module
+router.post('/:id/start', auth, startModule);
 
 // Mark module as completed
-router.post('/:id/complete', auth, (req, res) => {
-  res.json({ success: true, message: 'Mark module complete endpoint' });
-});
+router.post('/:id/complete', auth, completeModule);
+
+// Submit quiz
+router.post('/:id/quiz', auth, submitQuiz);
 
 module.exports = router;

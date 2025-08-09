@@ -20,10 +20,11 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true
+  }));
+app.options("*", cors()); 
+app.use(express.json());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -51,7 +52,7 @@ app.use('/api/tools', toolsRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'FinanceU API is healthy!',
+    message: 'FinanceU API is healthy! ;)',
     timestamp: new Date().toISOString()
   });
 });

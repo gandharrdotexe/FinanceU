@@ -16,12 +16,16 @@ import {
 } from '@mui/material'
 import NextLink from 'next/link'
 import { useTheme } from '../../../contexts/ThemeContext'
+import { register } from '@/services/authServices'
+import { useRouter } from 'next/navigation';  
 
 const SignupPage = () => {
+  const router = useRouter();
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const { theme } = useTheme()
 
   // Create Material-UI theme based on current theme
@@ -60,9 +64,19 @@ const SignupPage = () => {
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Handle signup logic
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await register({email, password, username, name});
+      console.log(data.success);
+      if (data.success) {
+        router.push("/auth/login");
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError("Register failed");
+    }
   }
 
   return (

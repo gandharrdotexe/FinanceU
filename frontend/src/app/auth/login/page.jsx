@@ -16,10 +16,15 @@ import {
 } from '@mui/material'
 import NextLink from 'next/link'
 import { useTheme } from '../../../contexts/ThemeContext'
+import { login } from '@/services/authServices'
+import { useRouter } from 'next/navigation';
+
 
 const LoginPage = () => {
+  const router = useRouter();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const { theme } = useTheme()
 
   // Create Material-UI theme based on current theme
@@ -58,11 +63,22 @@ const LoginPage = () => {
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Handle login logic
-  }
-
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await login(email, password);
+      console.log(data.success);
+      if (data.success) {
+        router.push("/dashboard");
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError("Login failed");
+    }
+  };
+  
+  
   return (
     <ThemeProvider theme={muiTheme}>
       <Box 
@@ -124,7 +140,7 @@ const LoginPage = () => {
                 border: theme === 'dark' ? '1px solid rgba(75, 85, 99, 0.3)' : 'none'
               }}
             >
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleLogin}>
                 <Box sx={{ mb: 2 }}>
                   <Typography component="label" variant="body2" htmlFor="email" sx={{ color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
                     Email

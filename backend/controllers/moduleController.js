@@ -1,7 +1,9 @@
 const Module = require('../models/moduleModel');
 const Progress = require('../models/progressModel');
 const User = require('../models/userModel');
-const { calculateXPForAction, calculateLevel } = require('../utils/gamification');
+const { calculateXPForAction, calculateLevel, checkBadgeEligibility } = require('../utils/gamification');
+const Badge = require('../models/badgeModel');
+const UserBadge = require('../models/userBadgeModel');
 
 // Get all modules with user progress
 const getAllModules = async (req, res) => {
@@ -203,12 +205,33 @@ const completeModule = async (req, res) => {
 
     await user.save();
 
+    // Check and award badges for module completion
+    const eligibleBadges = await checkBadgeEligibility(user, 'complete_module');
+    const newlyAwarded = [];
+    for (const badgeName of eligibleBadges) {
+      const badge = await Badge.findOne({ name: badgeName });
+      if (!badge) continue;
+      const alreadyHas = await UserBadge.findOne({ userId: user._id, badgeId: badge._id });
+      if (alreadyHas) continue;
+      const userBadge = new UserBadge({ userId: user._id, badgeId: badge._id, earnedAt: new Date() });
+      await userBadge.save();
+      user.gamification.totalXP += badge.xpBonus;
+      user.gamification.badges.push(badge.name);
+      newlyAwarded.push(badge);
+    }
+    if (newlyAwarded.length > 0) {
+      // Recalculate level in case XP bonus crossed threshold
+      user.gamification.level = calculateLevel(user.gamification.totalXP);
+      await user.save();
+    }
+
     res.json({
       success: true,
       message: 'Module completed successfully',
       progress,
       xpEarned: module.xpReward + (quizScore === 100 ? 25 : 0),
-      newLevel: user.gamification.level
+      newLevel: user.gamification.level,
+      newBadges: newlyAwarded
     });
   } catch (error) {
     res.status(500).json({

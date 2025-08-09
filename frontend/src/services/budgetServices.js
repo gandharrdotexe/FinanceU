@@ -12,6 +12,28 @@ export const getBudget = async () => {
     }
 };
 
+export const getBudgetByMonth = async (month) => {
+    try {
+        const res = await api.get(`/budget/${month}`);
+        console.log(res.data);
+        return res.data;
+    } catch (err) {
+        console.error(err.message);
+        throw err;
+    }
+};
+
+export const createOrUpdateBudget = async (payload) => {
+    try {
+        const res = await api.post("/budget", payload);
+        console.log(res.data);
+        return res.data;
+    } catch (err) {
+        console.error(err.message);
+        throw err;
+    }
+};
+
 export const updateTransactions = async (category, description, amount) => {
     try {
         const res = await api.post("/budget/expense", {category, description, amount});

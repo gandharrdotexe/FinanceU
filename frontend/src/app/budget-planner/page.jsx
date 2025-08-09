@@ -35,7 +35,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import Link from 'next/link';
 import { useTheme } from '../../contexts/ThemeContext';
 import useAuth from '@/hooks/useAuth';
-import { getBudget, updateTransactions, deleteTransaction } from '@/services/budgetServices';
+import { getBudget, getBudgetByMonth, updateTransactions, deleteTransaction, createOrUpdateBudget } from '@/services/budgetServices';
 import { logout } from '@/services/authServices';
 import { LogOut } from 'lucide-react';
 
@@ -91,6 +91,17 @@ export default function BudgetPlannerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [savingBudget, setSavingBudget] = useState(false);
+  const [formMonth, setFormMonth] = useState(new Date().toISOString().substring(0, 7));
+  const [formIncome, setFormIncome] = useState([
+    { source: 'allowance', amount: '', frequency: 'monthly' }
+  ]);
+  const [formExpenses, setFormExpenses] = useState([
+    { category: 'food', budgeted: '', actual: '0' }
+  ]);
+  const [formGoals, setFormGoals] = useState([
+    { name: '', targetAmount: '', savedAmount: '0', deadline: '', priority: 'medium' }
+  ]);
 
   // Transform backend data to frontend format
   const [transactions, setTransactions] = useState([]);
@@ -148,6 +159,41 @@ export default function BudgetPlannerPage() {
 
     fetchBudget();
   }, []);
+
+  useEffect(() => {
+    if (budgetData) {
+      setFormMonth(budgetData.month || new Date().toISOString().substring(0, 7));
+      setFormIncome(
+        budgetData.income?.length
+          ? budgetData.income.map((i) => ({
+              source: i.source || 'allowance',
+              amount: i.amount?.toString() || '',
+              frequency: i.frequency || 'monthly'
+            }))
+          : [{ source: 'allowance', amount: '', frequency: 'monthly' }]
+      );
+      setFormExpenses(
+        budgetData.expenses?.length
+          ? budgetData.expenses.map((e) => ({
+              category: e.category || 'food',
+              budgeted: e.budgeted?.toString() || '',
+              actual: (e.actual ?? 0).toString()
+            }))
+          : [{ category: 'food', budgeted: '', actual: '0' }]
+      );
+      setFormGoals(
+        budgetData.goals?.length
+          ? budgetData.goals.map((g) => ({
+              name: g.name || '',
+              targetAmount: g.targetAmount?.toString() || '',
+              savedAmount: (g.savedAmount ?? 0).toString(),
+              deadline: g.deadline ? new Date(g.deadline).toISOString().split('T')[0] : '',
+              priority: g.priority || 'medium'
+            }))
+          : [{ name: '', targetAmount: '', savedAmount: '0', deadline: '', priority: 'medium' }]
+      );
+    }
+  }, [budgetData]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -354,6 +400,120 @@ export default function BudgetPlannerPage() {
       setLoading(false);
     }
   };
+
+  const handleSaveBudget = async () => {
+    try {
+      setSavingBudget(true);
+      // Build payload from form state
+      const payload = {
+        month: formMonth,
+        income: formIncome
+          .filter((i) => i.source && i.amount !== '' && i.frequency)
+          .map((i) => ({
+            source: i.source.toLowerCase(),
+            amount: parseFloat(i.amount),
+            frequency: i.frequency.toLowerCase()
+          })),
+        expenses: formExpenses
+          .filter((e) => e.category && e.budgeted !== '')
+          .map((e) => ({
+            category: e.category.toLowerCase(),
+            budgeted: parseFloat(e.budgeted),
+            actual: e.actual === '' ? 0 : parseFloat(e.actual)
+          })),
+        goals: formGoals
+          .filter((g) => g.name && g.targetAmount !== '' && g.deadline)
+          .map((g) => ({
+            name: g.name,
+            targetAmount: parseFloat(g.targetAmount),
+            savedAmount: g.savedAmount === '' ? 0 : parseFloat(g.savedAmount),
+            deadline: new Date(g.deadline).toISOString(),
+            priority: g.priority.toLowerCase()
+          }))
+      };
+
+      const response = await createOrUpdateBudget(payload);
+      if (!response.success) {
+        setError(response.message || 'Failed to save budget');
+        setSuccessMessage('');
+        return;
+      }
+
+      // Refresh budget and transactions from server
+      const monthToFetch = payload.month || new Date().toISOString().substring(0, 7);
+      const budgetResponse = await getBudgetByMonth(monthToFetch).catch(async () => {
+        // fallback to current month if specific month is not found
+        return await getBudget();
+      });
+      if (budgetResponse.success) {
+        setBudgetData(budgetResponse.budget);
+
+        const incomeTransactions = budgetResponse.budget.income.map((income) => ({
+          id: `income-${income.source}-${Date.now()}`,
+          description: `${income.source.charAt(0).toUpperCase() + income.source.slice(1)} Income`,
+          amount: income.frequency === 'weekly' ? income.amount * 4 : income.amount,
+          category: income.source.charAt(0).toUpperCase() + income.source.slice(1),
+          type: 'income',
+          date: new Date().toISOString().split('T')[0]
+        }));
+
+        const expenseTransactions = budgetResponse.budget.expenses.flatMap((expense) =>
+          (expense.transactions || []).map((transaction) => ({
+            id: `expense-${expense.category}-${transaction._id || Date.now()}`,
+            description: transaction.description,
+            amount: transaction.amount,
+            category: expense.category.charAt(0).toUpperCase() + expense.category.slice(1),
+            type: 'expense',
+            date: new Date(transaction.date).toISOString().split('T')[0]
+          }))
+        );
+
+        const allTransactions = [...incomeTransactions, ...expenseTransactions];
+        setTransactions(allTransactions);
+      }
+
+      setSuccessMessage(response.message || 'Budget saved successfully');
+      setError('');
+      setTabValue('overview');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid JSON or failed to save budget');
+      setSuccessMessage('');
+    } finally {
+      setSavingBudget(false);
+    }
+  };
+
+  // Form handlers
+  const setIncomeField = (index, field, value) => {
+    setFormIncome((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+  const addIncomeRow = () => setFormIncome((prev) => [...prev, { source: 'allowance', amount: '', frequency: 'monthly' }]);
+  const removeIncomeRow = (index) => setFormIncome((prev) => prev.filter((_, i) => i !== index));
+
+  const setExpenseField = (index, field, value) => {
+    setFormExpenses((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+  const addExpenseRow = () => setFormExpenses((prev) => [...prev, { category: 'food', budgeted: '', actual: '0' }]);
+  const removeExpenseRow = (index) => setFormExpenses((prev) => prev.filter((_, i) => i !== index));
+
+  const setGoalField = (index, field, value) => {
+    setFormGoals((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+  const addGoalRow = () => setFormGoals((prev) => [...prev, { name: '', targetAmount: '', savedAmount: '0', deadline: '', priority: 'medium' }]);
+  const removeGoalRow = (index) => setFormGoals((prev) => prev.filter((_, i) => i !== index));
 
   if (loading) {
     return (
@@ -635,6 +795,14 @@ export default function BudgetPlannerPage() {
               }} 
             />
             <Tab 
+              value="createUpdate" 
+              label="Create/Update Budget" 
+              sx={{ 
+                fontWeight: tabValue === 'createUpdate' ? 'bold' : 'normal',
+                color: tabValue === 'createUpdate' ? '#7C3AED' : 'inherit'
+              }} 
+            />
+            <Tab 
               value="add" 
               label="Add Transaction" 
               sx={{ 
@@ -907,6 +1075,214 @@ export default function BudgetPlannerPage() {
                     No budget data available
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {tabValue === 'createUpdate' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="dark:bg-gray-900/80 dark:text-white">
+              <CardHeader
+                title="Create/Update Budget"
+                subheader="Fill your month, incomes, expenses and goals"
+                className="dark:text-white"
+                subheaderTypographyProps={{ className: "dark:text-gray-300" }}
+              />
+              <CardContent>
+                <Box className="grid gap-6">
+                  <div>
+                    <InputLabel htmlFor="month" className="dark:text-white">Month (YYYY-MM)</InputLabel>
+                    <TextField
+                      id="month"
+                      fullWidth
+                      type="month"
+                      value={formMonth}
+                      onChange={(e) => setFormMonth(e.target.value)}
+                      className="mt-2"
+                      sx={{ '& .MuiInputBase-input': { color: 'inherit' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' } }}
+                    />
+                  </div>
+
+                  <Divider className="dark:border-gray-700" />
+                  <Typography variant="h6" className="dark:text-white">Income</Typography>
+                  <Box className="grid gap-4">
+                    {formIncome.map((row, idx) => (
+                      <Paper key={`income-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
+                        <FormControl className="md:col-span-3">
+                          <InputLabel className="dark:text-white">Source</InputLabel>
+                          <Select
+                            value={row.source}
+                            label="Source"
+                            onChange={(e) => setIncomeField(idx, 'source', e.target.value)}
+                            className="dark:text-white"
+                          >
+                            <MenuItem value="allowance">Allowance</MenuItem>
+                            <MenuItem value="part-time">Part-time</MenuItem>
+                            <MenuItem value="scholarship">Scholarship</MenuItem>
+                            <MenuItem value="freelance">Freelance</MenuItem>
+                            <MenuItem value="other">Other</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          className="md:col-span-3"
+                          label="Amount"
+                          type="number"
+                          value={row.amount}
+                          onChange={(e) => setIncomeField(idx, 'amount', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <FormControl className="md:col-span-3">
+                          <InputLabel className="dark:text-white">Frequency</InputLabel>
+                          <Select
+                            value={row.frequency}
+                            label="Frequency"
+                            onChange={(e) => setIncomeField(idx, 'frequency', e.target.value)}
+                            className="dark:text-white"
+                          >
+                            <MenuItem value="monthly">Monthly</MenuItem>
+                            <MenuItem value="weekly">Weekly</MenuItem>
+                            <MenuItem value="one-time">One-time</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <div className="md:col-span-3 flex items-end">
+                          <IconButton color="error" onClick={() => removeIncomeRow(idx)} disabled={formIncome.length === 1}>
+                            <Trash2 />
+                          </IconButton>
+                        </div>
+                      </Paper>
+                    ))}
+                    <Button onClick={addIncomeRow} startIcon={<PlusCircle />}>Add Income</Button>
+                  </Box>
+
+                  <Divider className="dark:border-gray-700" />
+                  <Typography variant="h6" className="dark:text-white">Expenses</Typography>
+                  <Box className="grid gap-4">
+                    {formExpenses.map((row, idx) => (
+                      <Paper key={`expense-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
+                        <FormControl className="md:col-span-3">
+                          <InputLabel className="dark:text-white">Category</InputLabel>
+                          <Select
+                            value={row.category}
+                            label="Category"
+                            onChange={(e) => setExpenseField(idx, 'category', e.target.value)}
+                            className="dark:text-white"
+                          >
+                            <MenuItem value="food">Food</MenuItem>
+                            <MenuItem value="books">Books</MenuItem>
+                            <MenuItem value="entertainment">Entertainment</MenuItem>
+                            <MenuItem value="transport">Transport</MenuItem>
+                            <MenuItem value="housing">Housing</MenuItem>
+                            <MenuItem value="utilities">Utilities</MenuItem>
+                            <MenuItem value="healthcare">Healthcare</MenuItem>
+                            <MenuItem value="clothing">Clothing</MenuItem>
+                            <MenuItem value="other">Other</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          className="md:col-span-3"
+                          label="Budgeted"
+                          type="number"
+                          value={row.budgeted}
+                          onChange={(e) => setExpenseField(idx, 'budgeted', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <TextField
+                          className="md:col-span-3"
+                          label="Actual"
+                          type="number"
+                          value={row.actual}
+                          onChange={(e) => setExpenseField(idx, 'actual', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <div className="md:col-span-3 flex items-end">
+                          <IconButton color="error" onClick={() => removeExpenseRow(idx)} disabled={formExpenses.length === 1}>
+                            <Trash2 />
+                          </IconButton>
+                        </div>
+                      </Paper>
+                    ))}
+                    <Button onClick={addExpenseRow} startIcon={<PlusCircle />}>Add Expense</Button>
+                  </Box>
+
+                  <Divider className="dark:border-gray-700" />
+                  <Typography variant="h6" className="dark:text-white">Goals</Typography>
+                  <Box className="grid gap-4">
+                    {formGoals.map((row, idx) => (
+                      <Paper key={`goal-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
+                        <TextField
+                          className="md:col-span-3"
+                          label="Name"
+                          value={row.name}
+                          onChange={(e) => setGoalField(idx, 'name', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <TextField
+                          className="md:col-span-3"
+                          label="Target Amount"
+                          type="number"
+                          value={row.targetAmount}
+                          onChange={(e) => setGoalField(idx, 'targetAmount', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <TextField
+                          className="md:col-span-2"
+                          label="Saved Amount"
+                          type="number"
+                          value={row.savedAmount}
+                          onChange={(e) => setGoalField(idx, 'savedAmount', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                        />
+                        <TextField
+                          className="md:col-span-2"
+                          label="Deadline"
+                          type="date"
+                          value={row.deadline}
+                          onChange={(e) => setGoalField(idx, 'deadline', e.target.value)}
+                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                        <FormControl className="md:col-span-2">
+                          <InputLabel className="dark:text-white">Priority</InputLabel>
+                          <Select
+                            value={row.priority}
+                            label="Priority"
+                            onChange={(e) => setGoalField(idx, 'priority', e.target.value)}
+                            className="dark:text-white"
+                          >
+                            <MenuItem value="high">High</MenuItem>
+                            <MenuItem value="medium">Medium</MenuItem>
+                            <MenuItem value="low">Low</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <div className="md:col-span-12 flex items-end justify-end">
+                          <IconButton color="error" onClick={() => removeGoalRow(idx)} disabled={formGoals.length === 1}>
+                            <Trash2 />
+                          </IconButton>
+                        </div>
+                      </Paper>
+                    ))}
+                    <Button onClick={addGoalRow} startIcon={<PlusCircle />}>Add Goal</Button>
+                  </Box>
+
+                  <Button 
+                    onClick={handleSaveBudget}
+                    variant="contained"
+                    disabled={savingBudget}
+                    startIcon={savingBudget ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <PlusCircle />}
+                    sx={{
+                      background: 'linear-gradient(to right, #7C3AED, #6D28D9)',
+                      '&:hover': { background: 'linear-gradient(to right, #6D28D9, #5B21B6)' },
+                      '&:disabled': { background: '#9CA3AF' }
+                    }}
+                  >
+                    {savingBudget ? 'Saving...' : 'Save Budget'}
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </motion.div>

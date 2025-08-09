@@ -20,7 +20,8 @@ const calculateLevel = (xp) => {
     // Module completion badges
     if (action === 'complete_module') {
       const completedCount = user.progress.modulesCompleted.length;
-      if (completedCount === 1) badges.push('first_module');
+      // Seeded badge name for first module completion
+      if (completedCount === 1) badges.push('First Steps');
       if (completedCount === 5) badges.push('learning_streak');
       if (completedCount === 10) badges.push('knowledge_master');
     }

@@ -116,7 +116,8 @@ export default function Dashboard() {
   console.log("dashboard data: ",dashboard)
   useEffect(() => {
     const fetchBadges = async () => {
-      if (!dashboard || !dashboard.badges) return;
+      // Skip fetching when there are no badges
+      if (!dashboard || !Array.isArray(dashboard.badges) || dashboard.badges.length === 0) return;
       
       try {
         const badgedata = await getBadges(dashboard.badges);
@@ -155,12 +156,12 @@ export default function Dashboard() {
 
   // Use real data from API or fallback to defaults
   const userStats = dashboard ? {
-    xp: dashboard.user.totalXP,
-    level: dashboard.user.level,
-    completedLessons: dashboard.progress.modulesCompleted,
-    totalLessons: dashboard.progress.totalModules,
-    badges: dashboard.badges.length,
-    streak: dashboard.user.streak
+    xp: dashboard.user?.totalXP ?? 0,
+    level: dashboard.user?.level ?? 1,
+    completedLessons: dashboard.progress?.modulesCompleted ?? 0,
+    totalLessons: dashboard.progress?.totalModules ?? 0,
+    badges: Array.isArray(dashboard.badges) ? dashboard.badges.length : 0,
+    streak: dashboard.user?.streak ?? 0
   } : {
     xp: 0,
     level: 1,

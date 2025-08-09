@@ -475,8 +475,18 @@ export default function Dashboard() {
                   transition={{ delay: 0.2 }}
                 >
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-bold mb-2 dark:text-white">Continue Learning</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4">Pick up where you left off</p>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex flex-col'>
+                      <h3 className="text-lg font-bold mb-2 dark:text-white">Continue Learning</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">Pick up where you left off</p>
+                      </div>
+                      <Link href="/lessons">
+                      <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
+                          Continue Learning
+                        </button>
+                      </Link>
+                    </div>
+                    
                     
                     <div className="space-y-4">
                       {recentLessons.map((lesson, index) => (

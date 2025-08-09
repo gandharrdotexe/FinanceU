@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Star,
   Zap,
-  Award
+  Award,
+  LogOut
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme, toggleTheme } from '../../contexts/ThemeContext'
@@ -19,6 +20,7 @@ import useAuth from '@/hooks/useAuth'
 import { getDashboardData, getBadges, getModules } from '@/services/userServices'
 import { logout } from '@/services/authServices'
 import { DashboardSharp } from '@mui/icons-material'
+import { usePathname } from 'next/navigation';
 
 // Animation variants
 const containerVariants = {
@@ -79,6 +81,12 @@ const bounceVariants = {
 
 export default function Dashboard() {
   useAuth()
+
+  const pathname = usePathname();
+  
+  const isActive = (path) => {
+    return pathname === path;
+  };
 
   const [dashboard, setDashboard] = useState(null);
   const [badge, setBadge] = useState(null);
@@ -228,58 +236,83 @@ export default function Dashboard() {
     <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900`}>
       {/* Header */}
       <motion.div
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 100 }}
-      >
-        <header className={`bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50`}>
-          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 no-underline">
-              <motion.div
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-                className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center"
-              >
-                <span className="text-white font-bold text-sm">F</span>
-              </motion.div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                FinanceU
-              </span>
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 100 }}
+    >
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2 no-underline">
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
+              className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center"
+            >
+              <span className="text-white font-bold text-sm">F</span>
+            </motion.div>
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              FinanceU
+            </span>
+          </Link>
+          
+          <nav className="flex items-center gap-6">
+            <Link 
+              href="/dashboard" 
+              className={`${isActive('/dashboard') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Dashboard
             </Link>
-            
-            <div className="flex items-center gap-4">
-              <motion.div whileHover={{ scale: 1.1 }}>
-                <div className="flex items-center bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full">
-                  <Zap className="w-4 h-4 mr-1" />
-                  <span className="text-sm font-medium">{userStats.xp} XP</span>
-                </div>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.1 }}>
-                <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full">
-                  <span className="text-sm font-medium">Level {userStats.level}</span>
-                </div>
-              </motion.div>
-              <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {theme === 'light' ? (
-                  <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                ) : (
-                  <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                )}
-              </button>
-
-              <button onClick={logout} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
-                Logout
-              </button>
-
-            </div>
-          </div>
-        </header>
-      </motion.div>
-
+            <Link 
+              href="/budget-planner" 
+              className={`${isActive('/budget-planner') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Budget
+            </Link>
+            <Link 
+              href="/goals" 
+              className={`${isActive('/goals') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Goals
+            </Link>
+            <Link 
+              href="/mentor" 
+              className={`${isActive('/mentor') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              AI Mentor
+            </Link>
+            <button 
+              onClick={logout} 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+            >
+              <LogOut size={20} />
+            </button>
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              )}
+            </button>
+          </nav>
+        </div>
+      </header>
+    </motion.div>
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Loading State */}
         {loading && (

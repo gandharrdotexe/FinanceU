@@ -36,6 +36,13 @@ import Link from 'next/link';
 import { useTheme } from '../../contexts/ThemeContext';
 import useAuth from '@/hooks/useAuth';
 import { getBudget, updateTransactions, deleteTransaction } from '@/services/budgetServices';
+import { logout } from '@/services/authServices';
+import { LogOut } from 'lucide-react';
+
+import { usePathname } from 'next/navigation';
+
+
+
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#6B7280'];
 
@@ -74,6 +81,11 @@ export default function BudgetPlannerPage() {
 
   useAuth();
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  
+  const isActive = (path) => {
+    return pathname === path;
+  };
 
   const [budgetData, setBudgetData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -374,7 +386,7 @@ export default function BudgetPlannerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <motion.header 
+      {/* <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100 }}
@@ -407,7 +419,86 @@ export default function BudgetPlannerPage() {
           </div>
           
         </div>
-      </motion.header>
+      </motion.header> */}
+
+<motion.div
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 100 }}
+    >
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-2 no-underline">
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
+              className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center"
+            >
+              <span className="text-white font-bold text-sm">F</span>
+            </motion.div>
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              FinanceU
+            </span>
+          </Link>
+          
+          <nav className="flex items-center gap-6">
+            <Link 
+              href="/dashboard" 
+              className={`${isActive('/dashboard') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              href="/budget-planner" 
+              className={`${isActive('/budget-planner') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Budget
+            </Link>
+            <Link 
+              href="/goals" 
+              className={`${isActive('/goals') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Goals
+            </Link>
+            <Link 
+              href="/mentor" 
+              className={`${isActive('/mentor') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              AI Mentor
+            </Link>
+            <button 
+              onClick={logout} 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+            >
+              <LogOut size={20} />
+            </button>
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              )}
+            </button>
+          </nav>
+        </div>
+      </header>
+    </motion.div>
 
       <div className="max-w-6xl mx-auto p-8">
         <motion.div 
@@ -566,6 +657,9 @@ export default function BudgetPlannerPage() {
                 title="Expense Breakdown"
                 subheader="Where your money goes"
                 className="dark:text-white"
+                subheaderTypographyProps={{
+                  className: "dark:text-gray-300"
+                }}
               />
               <CardContent>
                 {pieData.length > 0 ? (
@@ -601,7 +695,9 @@ export default function BudgetPlannerPage() {
                 title="Recent Transactions"
                 subheader="Your latest financial activity"
                 className="dark:text-white"
-                
+                subheaderTypographyProps={{
+                  className: "dark:text-gray-300"
+                }}
               />
               <CardContent>
                 <div className="grid gap-3 ">
@@ -650,6 +746,9 @@ export default function BudgetPlannerPage() {
                 title="All Transactions"
                 subheader="Manage your income and expenses"
                 className="dark:text-white"
+                subheaderTypographyProps={{
+                  className: "dark:text-gray-300"
+                }}
                 action={
                   <div className="flex items-center space-x-2">
                     <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -688,25 +787,29 @@ export default function BudgetPlannerPage() {
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            <Badge 
-                              color={transaction.type === 'income' ? 'primary' : 'secondary'}
-                              badgeContent={transaction.category}
-                              sx={{ 
-                                '& .MuiBadge-badge': {
-                                  backgroundColor: transaction.type === 'income' ? '#3B82F6' : '#6B7280',
-                                  color: 'white',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: '0.25rem'
-                                }
-                              }}
-                            />
-                            <Typography variant="body1" className="font-medium dark:text-white">
+                            
+                            <Typography variant="body1" className="font-medium pl-2 dark:text-white">
                               {transaction.description}
                             </Typography>
                           </div>
-                          <Typography variant="body2" color="text.secondary" className="mt-2 dark:text-white">
-                            {transaction.date}
-                          </Typography>
+                          <div className='flex items-center gap-3 mt-1'>
+                            <Typography variant="body2" color="text.secondary" className="dark:text-gray-300">
+                              {transaction.date}
+                            </Typography>
+                            
+                            <span 
+                              className={`px-2 py-1 text-xs font-medium rounded-md ${
+                                transaction.type === 'income' 
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {transaction.category}
+                            </span>
+                          </div>
+                          
+                          
+                          
                         </div>
                         <div className="flex items-center gap-3">
                           <Typography 
@@ -747,7 +850,10 @@ export default function BudgetPlannerPage() {
                 title="50/30/20 Budget Rule"
                 subheader="How well are you following the recommended budget allocation?"
                 className="dark:text-white"
-                />
+                subheaderTypographyProps={{
+                  className: "dark:text-gray-300"
+                }}
+              />
               <CardContent>
                 {budgetRuleData.length > 0 ? (
                   <>
@@ -839,7 +945,10 @@ export default function BudgetPlannerPage() {
                 title="Add New Transaction"
                 subheader="Record your income or expenses"
                 className="dark:text-white"
-                />
+                subheaderTypographyProps={{
+                  className: "dark:text-gray-300"
+                }}
+              />
               <CardContent>
                 <Box className="grid gap-6">
                   <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -851,6 +960,20 @@ export default function BudgetPlannerPage() {
                         value={newTransaction.type}
                         onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
                         className="mt-2"
+                        sx={{
+                          '& .MuiSelect-select': { 
+                            color: 'inherit' 
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': { 
+                            borderColor: 'rgba(255,255,255,0.3)' 
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': { 
+                            borderColor: 'rgba(255,255,255,0.5)' 
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                            borderColor: 'rgba(59, 130, 246, 0.8)' 
+                          }
+                        }}
                       >
                         <MenuItem value="expense">Expense</MenuItem>
                         <MenuItem value="income">Income</MenuItem>
@@ -866,6 +989,24 @@ export default function BudgetPlannerPage() {
                         value={newTransaction.amount}
                         onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
                         className="mt-2"
+                        sx={{
+                          '& .MuiInputBase-input': {
+                            color: 'inherit'
+                          },
+                          '& .MuiInputBase-input::placeholder': {
+                            color: 'rgba(255,255,255,0.5)',
+                            opacity: 1
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(255,255,255,0.3)'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(255,255,255,0.5)'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(59, 130, 246, 0.8)'
+                          }
+                        }}
                       />
                     </div>
                   </Box>
@@ -878,6 +1019,24 @@ export default function BudgetPlannerPage() {
                       value={newTransaction.description}
                       onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
                       className="mt-2"
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          color: 'inherit'
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: 'rgba(255,255,255,0.5)',
+                          opacity: 1
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255,255,255,0.3)'
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255,255,255,0.5)'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(59, 130, 246, 0.8)'
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -888,6 +1047,20 @@ export default function BudgetPlannerPage() {
                       value={newTransaction.category}
                       onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
                       className="mt-2 dark:text-white"
+                      sx={{
+                        '& .MuiSelect-select': { 
+                          color: 'inherit' 
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': { 
+                          borderColor: 'rgba(255,255,255,0.3)' 
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': { 
+                          borderColor: 'rgba(255,255,255,0.5)' 
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { 
+                          borderColor: 'rgba(59, 130, 246, 0.8)' 
+                        }
+                      }}
                     >
                       <MenuItem value="" className="dark:text-white">Select category</MenuItem>
                       {newTransaction.type === 'income' ? [

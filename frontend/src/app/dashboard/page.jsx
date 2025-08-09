@@ -17,6 +17,8 @@ import { useTheme, toggleTheme } from '../../contexts/ThemeContext'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import useAuth from '@/hooks/useAuth'
 import { getDashboardData, getBadges, getModules } from '@/services/userServices'
+import { logout } from '@/services/authServices'
+import { DashboardSharp } from '@mui/icons-material'
 
 // Animation variants
 const containerVariants = {
@@ -269,7 +271,7 @@ export default function Dashboard() {
                 )}
               </button>
 
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
+              <button onClick={logout} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
                 Logout
               </button>
 
@@ -557,10 +559,10 @@ export default function Dashboard() {
                         💰
                       </motion.div>
                       <p className="font-medium mb-2 dark:text-white">Track expenses for 7 days</p>
-                      <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
-                      </div>
-                      <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">4/7 days completed</p>
+                                              <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
+                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min((userStats.streak / 7) * 100, 100)}%` }} />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">{userStats.streak}/7 days completed</p>
                       <Link href="/budget-planner" className="no-underline">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">

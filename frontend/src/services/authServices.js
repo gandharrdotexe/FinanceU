@@ -26,6 +26,9 @@ export const getCurrentUser = async () => {
 };
 
 export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }
+  window.location.href = "/auth/login";
 };

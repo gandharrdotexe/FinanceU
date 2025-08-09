@@ -268,6 +268,11 @@ export default function Dashboard() {
                   <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 )}
               </button>
+
+              <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
+                Logout
+              </button>
+
             </div>
           </div>
         </header>

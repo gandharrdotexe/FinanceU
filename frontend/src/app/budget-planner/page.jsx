@@ -986,13 +986,13 @@ export default function BudgetPlannerPage() {
                           >
                             {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount}
                           </Typography>
-                          <IconButton
+                          {/* <IconButton
                             onClick={() => deleteTransactionHandler(transaction.id, transaction.category)}
                             color="error"
                             size="small"
                           >
                             <Trash2 fontSize="small" />
-                          </IconButton>
+                          </IconButton> */}
                         </div>
                       </Paper>
                     ))
@@ -1081,213 +1081,228 @@ export default function BudgetPlannerPage() {
         )}
 
         {tabValue === 'createUpdate' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card className="dark:bg-gray-900/80 dark:text-white">
-              <CardHeader
-                title="Create/Update Budget"
-                subheader="Fill your month, incomes, expenses and goals"
-                className="dark:text-white"
-                subheaderTypographyProps={{ className: "dark:text-gray-300" }}
-              />
-              <CardContent>
-                <Box className="grid gap-6">
-                  <div>
-                    <InputLabel htmlFor="month" className="dark:text-white">Month (YYYY-MM)</InputLabel>
-                    <TextField
-                      id="month"
-                      fullWidth
-                      type="month"
-                      value={formMonth}
-                      onChange={(e) => setFormMonth(e.target.value)}
-                      className="mt-2"
-                      sx={{ '& .MuiInputBase-input': { color: 'inherit' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' } }}
-                    />
-                  </div>
+        <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="dark:bg-gray-900/80">
+          <CardHeader
+            title="Create/Update Budget"
+            titleTypographyProps={{ 
+              className: "text-gray-900 dark:text-white",
+              sx: { color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111827' }
+            }}
+            subheader="Fill your month, incomes, expenses and goals"
+            subheaderTypographyProps={{ 
+              className: "text-gray-600 dark:text-gray-300",
+              sx: { color: (theme) => theme.palette.mode === 'dark' ? '#d1d5db' : '#4b5563' }
+            }}
+          />
+          <div className="p-6 grid gap-6">
+  {/* Month Input */}
+  <div>
+    <label htmlFor="month" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      Month (YYYY-MM)
+    </label>
+    <input
+      id="month"
+      type="month"
+      value={formMonth}
+      onChange={(e) => setFormMonth(e.target.value)}
+      className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+    />
+  </div>
 
-                  <Divider className="dark:border-gray-700" />
-                  <Typography variant="h6" className="dark:text-white">Income</Typography>
-                  <Box className="grid gap-4">
-                    {formIncome.map((row, idx) => (
-                      <Paper key={`income-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
-                        <FormControl className="md:col-span-3">
-                          <InputLabel className="dark:text-white">Source</InputLabel>
-                          <Select
-                            value={row.source}
-                            label="Source"
-                            onChange={(e) => setIncomeField(idx, 'source', e.target.value)}
-                            className="dark:text-white"
-                          >
-                            <MenuItem value="allowance">Allowance</MenuItem>
-                            <MenuItem value="part-time">Part-time</MenuItem>
-                            <MenuItem value="scholarship">Scholarship</MenuItem>
-                            <MenuItem value="freelance">Freelance</MenuItem>
-                            <MenuItem value="other">Other</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <TextField
-                          className="md:col-span-3"
-                          label="Amount"
-                          type="number"
-                          value={row.amount}
-                          onChange={(e) => setIncomeField(idx, 'amount', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <FormControl className="md:col-span-3">
-                          <InputLabel className="dark:text-white">Frequency</InputLabel>
-                          <Select
-                            value={row.frequency}
-                            label="Frequency"
-                            onChange={(e) => setIncomeField(idx, 'frequency', e.target.value)}
-                            className="dark:text-white"
-                          >
-                            <MenuItem value="monthly">Monthly</MenuItem>
-                            <MenuItem value="weekly">Weekly</MenuItem>
-                            <MenuItem value="one-time">One-time</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <div className="md:col-span-3 flex items-end">
-                          <IconButton color="error" onClick={() => removeIncomeRow(idx)} disabled={formIncome.length === 1}>
-                            <Trash2 />
-                          </IconButton>
-                        </div>
-                      </Paper>
-                    ))}
-                    <Button onClick={addIncomeRow} startIcon={<PlusCircle />}>Add Income</Button>
-                  </Box>
+  <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
-                  <Divider className="dark:border-gray-700" />
-                  <Typography variant="h6" className="dark:text-white">Expenses</Typography>
-                  <Box className="grid gap-4">
-                    {formExpenses.map((row, idx) => (
-                      <Paper key={`expense-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
-                        <FormControl className="md:col-span-3">
-                          <InputLabel className="dark:text-white">Category</InputLabel>
-                          <Select
-                            value={row.category}
-                            label="Category"
-                            onChange={(e) => setExpenseField(idx, 'category', e.target.value)}
-                            className="dark:text-white"
-                          >
-                            <MenuItem value="food">Food</MenuItem>
-                            <MenuItem value="books">Books</MenuItem>
-                            <MenuItem value="entertainment">Entertainment</MenuItem>
-                            <MenuItem value="transport">Transport</MenuItem>
-                            <MenuItem value="housing">Housing</MenuItem>
-                            <MenuItem value="utilities">Utilities</MenuItem>
-                            <MenuItem value="healthcare">Healthcare</MenuItem>
-                            <MenuItem value="clothing">Clothing</MenuItem>
-                            <MenuItem value="other">Other</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <TextField
-                          className="md:col-span-3"
-                          label="Budgeted"
-                          type="number"
-                          value={row.budgeted}
-                          onChange={(e) => setExpenseField(idx, 'budgeted', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <TextField
-                          className="md:col-span-3"
-                          label="Actual"
-                          type="number"
-                          value={row.actual}
-                          onChange={(e) => setExpenseField(idx, 'actual', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <div className="md:col-span-3 flex items-end">
-                          <IconButton color="error" onClick={() => removeExpenseRow(idx)} disabled={formExpenses.length === 1}>
-                            <Trash2 />
-                          </IconButton>
-                        </div>
-                      </Paper>
-                    ))}
-                    <Button onClick={addExpenseRow} startIcon={<PlusCircle />}>Add Expense</Button>
-                  </Box>
+  {/* Income Section */}
+  <div>
+    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Income</h3>
+    <div className="grid gap-4">
+      {formIncome.map((row, idx) => (
+        <div key={`income-${idx}`} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 bg-gray-50 dark:bg-gray-800/80 rounded-lg">
+          {/* Source Select */}
+          <div className="md:col-span-3">
+            <label htmlFor={`income-source-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Source
+            </label>
+            <select
+              id={`income-source-${idx}`}
+              value={row.source}
+              onChange={(e) => setIncomeField(idx, 'source', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="allowance">Allowance</option>
+              <option value="part-time">Part-time</option>
+              <option value="scholarship">Scholarship</option>
+              <option value="freelance">Freelance</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
 
-                  <Divider className="dark:border-gray-700" />
-                  <Typography variant="h6" className="dark:text-white">Goals</Typography>
-                  <Box className="grid gap-4">
-                    {formGoals.map((row, idx) => (
-                      <Paper key={`goal-${idx}`} elevation={0} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 dark:bg-gray-800/80">
-                        <TextField
-                          className="md:col-span-3"
-                          label="Name"
-                          value={row.name}
-                          onChange={(e) => setGoalField(idx, 'name', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <TextField
-                          className="md:col-span-3"
-                          label="Target Amount"
-                          type="number"
-                          value={row.targetAmount}
-                          onChange={(e) => setGoalField(idx, 'targetAmount', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <TextField
-                          className="md:col-span-2"
-                          label="Saved Amount"
-                          type="number"
-                          value={row.savedAmount}
-                          onChange={(e) => setGoalField(idx, 'savedAmount', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                        />
-                        <TextField
-                          className="md:col-span-2"
-                          label="Deadline"
-                          type="date"
-                          value={row.deadline}
-                          onChange={(e) => setGoalField(idx, 'deadline', e.target.value)}
-                          sx={{ '& .MuiInputBase-input': { color: 'inherit' } }}
-                          InputLabelProps={{ shrink: true }}
-                        />
-                        <FormControl className="md:col-span-2">
-                          <InputLabel className="dark:text-white">Priority</InputLabel>
-                          <Select
-                            value={row.priority}
-                            label="Priority"
-                            onChange={(e) => setGoalField(idx, 'priority', e.target.value)}
-                            className="dark:text-white"
-                          >
-                            <MenuItem value="high">High</MenuItem>
-                            <MenuItem value="medium">Medium</MenuItem>
-                            <MenuItem value="low">Low</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <div className="md:col-span-12 flex items-end justify-end">
-                          <IconButton color="error" onClick={() => removeGoalRow(idx)} disabled={formGoals.length === 1}>
-                            <Trash2 />
-                          </IconButton>
-                        </div>
-                      </Paper>
-                    ))}
-                    <Button onClick={addGoalRow} startIcon={<PlusCircle />}>Add Goal</Button>
-                  </Box>
+          {/* Amount Input */}
+          <div className="md:col-span-3">
+            <label htmlFor={`income-amount-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Amount
+            </label>
+            <input
+              id={`income-amount-${idx}`}
+              type="number"
+              value={row.amount}
+              onChange={(e) => setIncomeField(idx, 'amount', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
 
-                  <Button 
-                    onClick={handleSaveBudget}
-                    variant="contained"
-                    disabled={savingBudget}
-                    startIcon={savingBudget ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <PlusCircle />}
-                    sx={{
-                      background: 'linear-gradient(to right, #7C3AED, #6D28D9)',
-                      '&:hover': { background: 'linear-gradient(to right, #6D28D9, #5B21B6)' },
-                      '&:disabled': { background: '#9CA3AF' }
-                    }}
-                  >
-                    {savingBudget ? 'Saving...' : 'Save Budget'}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </motion.div>
+          {/* Frequency Select */}
+          <div className="md:col-span-3">
+            <label htmlFor={`income-frequency-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Frequency
+            </label>
+            <select
+              id={`income-frequency-${idx}`}
+              value={row.frequency}
+              onChange={(e) => setIncomeField(idx, 'frequency', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+              <option value="one-time">One-time</option>
+            </select>
+          </div>
+
+          {/* Delete Button */}
+          <div className="md:col-span-3 flex items-end">
+            <button
+              onClick={() => removeIncomeRow(idx)}
+              disabled={formIncome.length === 1}
+              className="p-2 text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Add Income Button */}
+      <button
+        onClick={addIncomeRow}
+        className="flex items-center justify-center gap-2 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+      >
+        <PlusCircle className="w-5 h-5" />
+        Add Income
+      </button>
+    </div>
+  </div>
+
+  <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+  {/* Expenses Section */}
+  <div>
+    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Expenses</h3>
+    <div className="grid gap-4">
+      {formExpenses.map((row, idx) => (
+        <div key={`expense-${idx}`} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 bg-gray-50 dark:bg-gray-800/80 rounded-lg">
+          {/* Category Select */}
+          <div className="md:col-span-3">
+            <label htmlFor={`expense-category-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Category
+            </label>
+            <select
+              id={`expense-category-${idx}`}
+              value={row.category}
+              onChange={(e) => setExpenseField(idx, 'category', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="food">Food</option>
+              <option value="books">Books</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="transport">Transport</option>
+              <option value="housing">Housing</option>
+              <option value="utilities">Utilities</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="clothing">Clothing</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          {/* Budgeted Input */}
+          <div className="md:col-span-3">
+            <label htmlFor={`expense-budgeted-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Budgeted
+            </label>
+            <input
+              id={`expense-budgeted-${idx}`}
+              type="number"
+              value={row.budgeted}
+              onChange={(e) => setExpenseField(idx, 'budgeted', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+
+          {/* Actual Input */}
+          <div className="md:col-span-3">
+            <label htmlFor={`expense-actual-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Actual
+            </label>
+            <input
+              id={`expense-actual-${idx}`}
+              type="number"
+              value={row.actual}
+              onChange={(e) => setExpenseField(idx, 'actual', e.target.value)}
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+
+          {/* Delete Button */}
+          <div className="md:col-span-3 flex items-end">
+            <button
+              onClick={() => removeExpenseRow(idx)}
+              disabled={formExpenses.length === 1}
+              className="p-2 text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Add Expense Button */}
+      <button
+        onClick={addExpenseRow}
+        className="flex items-center justify-center gap-2 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+      >
+        <PlusCircle className="w-5 h-5" />
+        Add Expense
+      </button>
+    </div>
+  </div>
+
+  <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+  {/* Save Budget Button */}
+  <button
+    onClick={handleSaveBudget}
+    disabled={savingBudget}
+    className="flex items-center justify-center w-full rounded-md bg-gradient-to-r from-purple-600 to-indigo-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:from-purple-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+  >
+    {savingBudget ? (
+      <>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+        Saving...
+      </>
+    ) : (
+      <>
+        <PlusCircle className="w-5 h-5 mr-2" />
+        Save Budget
+      </>
+    )}
+  </button>
+</div>
+        </Card>
+      </motion.div>
         )}
-
         {tabValue === 'add' && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1325,159 +1340,112 @@ export default function BudgetPlannerPage() {
                   className: "dark:text-gray-300"
                 }}
               />
-              <CardContent>
-                <Box className="grid gap-6">
-                  <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <InputLabel htmlFor="type" className="dark:text-white">Type</InputLabel>
-                      <Select
-                        id="type"
-                        fullWidth
-                        value={newTransaction.type}
-                        onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
-                        className="mt-2"
-                        sx={{
-                          '& .MuiSelect-select': { 
-                            color: 'inherit' 
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': { 
-                            borderColor: 'rgba(255,255,255,0.3)' 
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': { 
-                            borderColor: 'rgba(255,255,255,0.5)' 
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                            borderColor: 'rgba(59, 130, 246, 0.8)' 
-                          }
-                        }}
-                      >
-                        <MenuItem value="expense">Expense</MenuItem>
-                        <MenuItem value="income">Income</MenuItem>
-                      </Select>
-                    </div>
-                    <div>
-                      <InputLabel htmlFor="amount" className="dark:text-white">Amount (₹)</InputLabel>
-                      <TextField
-                        id="amount"
-                        type="number"
-                        fullWidth
-                        placeholder="0"
-                        value={newTransaction.amount}
-                        onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
-                        className="mt-2"
-                        sx={{
-                          '& .MuiInputBase-input': {
-                            color: 'inherit'
-                          },
-                          '& .MuiInputBase-input::placeholder': {
-                            color: 'rgba(255,255,255,0.5)',
-                            opacity: 1
-                          },
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'rgba(255,255,255,0.3)'
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'rgba(255,255,255,0.5)'
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'rgba(59, 130, 246, 0.8)'
-                          }
-                        }}
-                      />
-                    </div>
-                  </Box>
-                  <div>
-                    <InputLabel htmlFor="description" className="dark:text-white">Description</InputLabel>
-                    <TextField
-                      id="description"
-                      fullWidth
-                      placeholder="e.g., Lunch at cafeteria"
-                      value={newTransaction.description}
-                      onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
-                      className="mt-2"
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          color: 'inherit'
-                        },
-                        '& .MuiInputBase-input::placeholder': {
-                          color: 'rgba(255,255,255,0.5)',
-                          opacity: 1
-                        },
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'rgba(255,255,255,0.3)'
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'rgba(255,255,255,0.5)'
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'rgba(59, 130, 246, 0.8)'
-                        }
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <InputLabel htmlFor="category" className="dark:text-white" >Category</InputLabel>
-                    <Select
-                      id="category"
-                      fullWidth
-                      value={newTransaction.category}
-                      onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
-                      className="mt-2 dark:text-white"
-                      sx={{
-                        '& .MuiSelect-select': { 
-                          color: 'inherit' 
-                        },
-                        '& .MuiOutlinedInput-notchedOutline': { 
-                          borderColor: 'rgba(255,255,255,0.3)' 
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { 
-                          borderColor: 'rgba(255,255,255,0.5)' 
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { 
-                          borderColor: 'rgba(59, 130, 246, 0.8)' 
-                        }
-                      }}
-                    >
-                      <MenuItem value="" className="dark:text-white">Select category</MenuItem>
-                      {newTransaction.type === 'income' ? [
-                        <MenuItem key="Allowance" value="Allowance">Allowance</MenuItem>,
-                        <MenuItem key="Part-time" value="Part-time">Part-time Job</MenuItem>,
-                        <MenuItem key="Scholarship" value="Scholarship">Scholarship</MenuItem>,
-                        <MenuItem key="Freelance" value="Freelance">Freelance</MenuItem>,
-                        <MenuItem key="Other" value="Other">Other Income</MenuItem>
-                      ] : [
-                        <MenuItem key="Food" value="Food">Food & Groceries</MenuItem>,
-                        <MenuItem key="Transport" value="Transport">Transport</MenuItem>,
-                        <MenuItem key="Books" value="Books">Books & Education</MenuItem>,
-                        <MenuItem key="Entertainment" value="Entertainment">Entertainment</MenuItem>,
-                        <MenuItem key="Housing" value="Housing">Housing</MenuItem>,
-                        <MenuItem key="Utilities" value="Utilities">Utilities</MenuItem>,
-                        <MenuItem key="Healthcare" value="Healthcare">Healthcare</MenuItem>,
-                        <MenuItem key="Clothing" value="Clothing">Clothing</MenuItem>,
-                        <MenuItem key="Other" value="Other">Other Expenses</MenuItem>
-                      ]}
-                    </Select>
-                  </div>
-                  <Button 
-                    onClick={addTransaction}
-                    variant="contained"
-                    fullWidth
-                    disabled={loading}
-                    startIcon={loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <PlusCircle />}
-                    sx={{
-                      background: 'linear-gradient(to right, #7C3AED, #6D28D9)',
-                      '&:hover': {
-                        background: 'linear-gradient(to right, #6D28D9, #5B21B6)'
-                      },
-                      '&:disabled': {
-                        background: '#9CA3AF'
-                      }
-                    }}
-                  >
-                    {loading ? 'Adding Transaction...' : 'Add Transaction'}
-                  </Button>
-                </Box>
-              </CardContent>
+            <div className="p-6">
+  <div className="grid gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Type Select */}
+      <div>
+        <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Type
+        </label>
+        <select
+          id="type"
+          value={newTransaction.type}
+          onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
+          className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+        >
+          <option value="expense" className="text-gray-900 dark:text-white">Expense</option>
+          <option value="income" className="text-gray-900 dark:text-white">Income</option>
+        </select>
+      </div>
+
+      {/* Amount Input */}
+      <div>
+        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Amount (₹)
+        </label>
+        <input
+          id="amount"
+          type="number"
+          placeholder="0"
+          value={newTransaction.amount}
+          onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+          className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+      </div>
+    </div>
+
+    {/* Description Input */}
+    <div>
+      <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Description
+      </label>
+      <input
+        id="description"
+        type="text"
+        placeholder="e.g., Lunch at cafeteria"
+        value={newTransaction.description}
+        onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+        className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+      />
+    </div>
+
+    {/* Category Select */}
+    <div>
+      <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Category
+      </label>
+      <select
+        id="category"
+        value={newTransaction.category}
+        onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})}
+        className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900 dark:text-white"
+      >
+        <option value="" className="text-gray-900 dark:text-white">Select category</option>
+        {newTransaction.type === 'income' ? (
+          <>
+            <option value="Allowance" className="text-gray-900 dark:text-white">Allowance</option>
+            <option value="Part-time" className="text-gray-900 dark:text-white">Part-time Job</option>
+            <option value="Scholarship" className="text-gray-900 dark:text-white">Scholarship</option>
+            <option value="Freelance" className="text-gray-900 dark:text-white">Freelance</option>
+            <option value="Other" className="text-gray-900 dark:text-white">Other Income</option>
+          </>
+        ) : (
+          <>
+            <option value="Food" className="text-gray-900 dark:text-white">Food & Groceries</option>
+            <option value="Transport" className="text-gray-900 dark:text-white">Transport</option>
+            <option value="Books" className="text-gray-900 dark:text-white">Books & Education</option>
+            <option value="Entertainment" className="text-gray-900 dark:text-white">Entertainment</option>
+            <option value="Housing" className="text-gray-900 dark:text-white">Housing</option>
+            <option value="Utilities" className="text-gray-900 dark:text-white">Utilities</option>
+            <option value="Healthcare" className="text-gray-900 dark:text-white">Healthcare</option>
+            <option value="Clothing" className="text-gray-900 dark:text-white">Clothing</option>
+            <option value="Other" className="text-gray-900 dark:text-white">Other Expenses</option>
+          </>
+        )}
+      </select>
+    </div>
+
+    {/* Add Transaction Button */}
+    <button
+      onClick={addTransaction}
+      disabled={loading}
+      className="flex items-center justify-center w-full rounded-md bg-gradient-to-r from-purple-600 to-indigo-700 py-2 px-4 text-sm font-medium text-white shadow-sm hover:from-purple-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
+    >
+      {loading ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Adding Transaction...
+        </>
+      ) : (
+        <>
+          <PlusCircle className="w-5 h-5 mr-2" />
+          Add Transaction
+        </>
+      )}
+    </button>
+  </div>
+</div>
             </Card>
           </motion.div>
         )}

@@ -636,15 +636,15 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Total Income</h4>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">${dashboard.budget.totalIncome}</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">₹{dashboard.budget.totalIncome}</p>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">Total Spent</h4>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">${dashboard.budget.totalActual}</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">₹{dashboard.budget.totalActual}</p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                         <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Remaining</h4>
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">${dashboard.budget.remainingBudget}</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{dashboard.budget.remainingBudget}</p>
                       </div>
                     </div>
                     <div className="text-center">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   BookOpen,
@@ -15,6 +15,8 @@ import {
 import Link from 'next/link'
 import { useTheme, toggleTheme } from '../../contexts/ThemeContext'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
+import useAuth from '@/hooks/useAuth'
+import { getDashboardData, getBadges, getModules } from '@/services/userServices'
 
 // Animation variants
 const containerVariants = {
@@ -74,15 +76,66 @@ const bounceVariants = {
 }
 
 export default function Dashboard() {
-  const [userStats] = useState({
-    xp: 1250,
-    level: 3,
-    completedLessons: 12,
-    totalLessons: 24,
-    badges: 5,
-    streak: 7
-  })
+  useAuth()
 
+  const [dashboard, setDashboard] = useState(null);
+  const [badge, setBadge] = useState(null);
+  const [modules, setModules] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardData();
+        if(data.success){
+          setDashboard(data.dashboard);
+
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  console.log("dashboard data: ",dashboard)
+  useEffect(() => {
+    const fetchBadges = async () => {
+      if (!dashboard || !dashboard.badges) return;
+      
+      try {
+        const badgedata = await getBadges(dashboard.badges);
+        if(badgedata.success){
+          setBadge(badgedata.data)
+        }
+      }catch (err) {
+        setError(err.response?.data?.message || "Failed to load badges");
+      }
+    };
+
+    fetchBadges();
+  }, [dashboard]);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const modulesData = await getModules();
+        if(modulesData.success){
+          setModules(modulesData.modules);
+        }
+      }catch (err) {
+        setError(err.response?.data?.message || "Failed to load modules");
+      }
+    };
+
+    fetchModules();
+  }, []);
+  
   const [tabValue, setTabValue] = useState(0)
   const { theme, toggleTheme } = useTheme()
 
@@ -90,18 +143,58 @@ export default function Dashboard() {
     setTabValue(newValue)
   }
 
-  const badges = [
-    { name: 'Budget Master', icon: '💰', earned: true },
-    { name: 'Investment Rookie', icon: '📈', earned: true },
-    { name: 'Savings Star', icon: '⭐', earned: true },
+  // Use real data from API or fallback to defaults
+  const userStats = dashboard ? {
+    xp: dashboard.user.totalXP,
+    level: dashboard.user.level,
+    completedLessons: dashboard.progress.modulesCompleted,
+    totalLessons: dashboard.progress.totalModules,
+    badges: dashboard.badges.length,
+    streak: dashboard.user.streak
+  } : {
+    xp: 0,
+    level: 1,
+    completedLessons: 0,
+    totalLessons: 0,
+    badges: 0,
+    streak: 0
+  };
+  const badges = badge?.map(badgeItem => ({
+    name: badgeItem.name,
+    icon: badgeItem.icon || '🏆',
+    earned: true,
+  })) || dashboard?.badges?.map(badge => ({
+    name: badge.name,
+    icon: badge.icon || '🏆',
+    earned: true
+  })) || [
+    { name: 'Budget Master', icon: '💰', earned: false },
+    { name: 'Investment Rookie', icon: '📈', earned: false },
+    { name: 'Savings Star', icon: '⭐', earned: false },
     { name: 'Debt Destroyer', icon: '🔥', earned: false },
     { name: 'Tax Ninja', icon: '🥷', earned: false }
   ]
 
-  const recentLessons = [
-    { title: 'Understanding Compound Interest', progress: 100, xp: 150 },
-    { title: 'Creating Your First Budget', progress: 100, xp: 120 },
-    { title: 'Emergency Fund Basics', progress: 75, xp: 90 },
+  const recentLessons = modules ? modules
+    .filter(module => 
+      module.userProgress?.status === 'in_progress' || 
+      module.userProgress?.status === 'completed' ||
+      (dashboard?.progress?.currentModule && module._id === dashboard.progress.currentModule._id)
+    )
+    .map((module, index) => ({
+      id: module._id || index,
+      title: module.title || `Module ${index + 1}`,
+      progress: module.userProgress?.status === 'completed' ? 100 : 
+                module.userProgress?.status === 'in_progress' ? 50 : 0,
+      xp: module.xpReward || 150,
+      isCompleted: module.userProgress?.status === 'completed',
+      description: module.description || '',
+      status: module.userProgress?.status || 'not_started'
+    }))
+    .slice(0, 4) : [
+    { title: 'Understanding Compound Interest', progress: 0, xp: 150 },
+    { title: 'Creating Your First Budget', progress: 0, xp: 120 },
+    { title: 'Emergency Fund Basics', progress: 0, xp: 90 },
     { title: 'Student Loan Strategies', progress: 0, xp: 0 }
   ]
 
@@ -181,16 +274,53 @@ export default function Dashboard() {
       </motion.div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold mb-2 dark:text-white">Welcome back, Alex! 👋</h1>
-          <p className="text-gray-600 dark:text-gray-300">You're on a {userStats.streak}-day learning streak! Keep it up!</p>
-        </motion.div>
+        {/* Loading State */}
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center py-20"
+          >
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-8"
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Dashboard Content */}
+        {!loading && !error && (
+          <>
+            {/* Welcome Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-8"
+            >
+              <h1 className="text-3xl font-bold mb-2 dark:text-white">Welcome back, {dashboard?.user?.name || 'User'}! 👋</h1>
+              <p className="text-gray-600 dark:text-gray-300">You're on a {userStats.streak}-day learning streak! Keep it up!</p>
+            </motion.div>
 
         {/* Stats Overview */}
         <motion.div
@@ -311,19 +441,31 @@ export default function Dashboard() {
                     <div className="space-y-4">
                       {recentLessons.map((lesson, index) => (
                         <motion.div
-                          key={index}
+                          key={lesson.id || index}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
                           whileHover={{ scale: 1.02 }}
                         >
-                          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex items-center justify-between border dark:border-gray-600">
+                          <div className={`bg-gray-50 dark:bg-gray-700 rounded-lg p-4 flex items-center justify-between border dark:border-gray-600 ${
+                            lesson.isCompleted ? 'border-green-300 dark:border-green-600' : ''
+                          }`}>
                             <div className="flex-1">
-                              <p className="font-medium dark:text-white">{lesson.title}</p>
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium dark:text-white">{lesson.title}</p>
+                                {lesson.isCompleted && (
+                                  <span className="text-green-600 dark:text-green-400 text-sm">✓ Completed</span>
+                                )}
+                              </div>
+                              {lesson.description && (
+                                <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{lesson.description}</p>
+                              )}
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                                   <div 
-                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                      lesson.isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                    }`}
                                     style={{ width: `${lesson.progress}%` }}
                                   />
                                 </div>
@@ -332,9 +474,13 @@ export default function Dashboard() {
                             </div>
                             <div className="ml-4 text-right">
                               <p className="text-gray-600 dark:text-gray-300 text-sm">+{lesson.xp} XP</p>
-                              <Link href={`/lessons/${index + 1}`} className="no-underline">
+                              <Link href={`/lessons/${lesson.id || index + 1}`} className="no-underline">
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                  <button className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                                  <button className={`mt-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    lesson.isCompleted 
+                                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  }`}>
                                     {lesson.progress === 0 ? 'Start' : lesson.progress === 100 ? 'Review' : 'Continue'}
                                   </button>
                                 </motion.div>
@@ -376,6 +522,11 @@ export default function Dashboard() {
                             <p className={`text-xs font-medium ${badge.earned ? 'text-yellow-800 dark:text-yellow-200' : 'text-gray-500 dark:text-gray-400'}`}>
                               {badge.name}
                             </p>
+                            {badge.description && (
+                              <p className={`text-xs mt-1 ${badge.earned ? 'text-yellow-700 dark:text-yellow-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                                {badge.description}
+                              </p>
+                            )}
                           </div>
                         </motion.div>
                       ))}
@@ -429,23 +580,51 @@ export default function Dashboard() {
                 <h3 className="text-lg font-bold mb-2 dark:text-white">Student Budget Planner</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">Track your income and expenses</p>
                 
-                <div className="text-center py-12">
-                  <motion.div
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Target size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                  </motion.div>
-                  <h4 className="text-lg font-medium mb-2 dark:text-white">Budget Planner Coming Soon</h4>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">Track your part-time job income, allowances, and student expenses</p>
-                  <Link href="/budget-planner" className="no-underline">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
-                        Set Up Budget
-                      </button>
+                {dashboard?.budget ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Total Income</h4>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">${dashboard.budget.totalIncome}</p>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">Total Spent</h4>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">${dashboard.budget.totalActual}</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Remaining</h4>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">${dashboard.budget.remainingBudget}</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <Link href="/budget-planner" className="no-underline">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                            View Full Budget
+                          </button>
+                        </motion.div>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Target size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                     </motion.div>
-                  </Link>
-                </div>
+                    <h4 className="text-lg font-medium mb-2 dark:text-white">No Budget Set Up</h4>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Track your part-time job income, allowances, and student expenses</p>
+                    <Link href="/budget-planner" className="no-underline">
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                          Set Up Budget
+                        </button>
+                      </motion.div>
+                    </Link>
+                  </div>
+                )}
               </div>
             </motion.div>
           </TabPanel>
@@ -460,23 +639,62 @@ export default function Dashboard() {
                 <h3 className="text-lg font-bold mb-2 dark:text-white">Financial Goals</h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">Set and track your savings goals</p>
                 
-                <div className="text-center py-12">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <TrendingUp size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                  </motion.div>
-                  <h4 className="text-lg font-medium mb-2 dark:text-white">Goal Tracking Coming Soon</h4>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">Save for that laptop, trip, or emergency fund with visual progress</p>
-                  <Link href="/goals" className="no-underline">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
-                        Create Goal
-                      </button>
+                {dashboard?.goals && dashboard.goals.length > 0 ? (
+                  <div className="space-y-4">
+                    {dashboard.goals.map((goal, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border dark:border-gray-600"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium dark:text-white">{goal.title}</h4>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {goal.daysRemaining} days left
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${goal.progressPercentage}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-600 dark:text-gray-300 text-sm">{goal.progressPercentage}%</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                    <div className="text-center pt-4">
+                      <Link href="/goals" className="no-underline">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                            View All Goals
+                          </button>
+                        </motion.div>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <TrendingUp size={64} className="text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                     </motion.div>
-                  </Link>
-                </div>
+                    <h4 className="text-lg font-medium mb-2 dark:text-white">No Goals Set</h4>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Save for that laptop, trip, or emergency fund with visual progress</p>
+                    <Link href="/goals" className="no-underline">
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                          Create Goal
+                        </button>
+                      </motion.div>
+                    </Link>
+                  </div>
+                )}
               </div>
             </motion.div>
           </TabPanel>
@@ -512,6 +730,8 @@ export default function Dashboard() {
             </motion.div>
           </TabPanel>
         </motion.div>
+          </>
+        )}
       </div>
     </div>
   )

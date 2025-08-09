@@ -36,6 +36,14 @@ GET    /api/gamification/achievements // Get user achievements
 POST   /api/gamification/check-badges // Check for new badges
 POST   /api/gamification/update-streak // Update user streak
 
+//  BADGE ROUTES
+GET    /api/badges                  // Get all badges
+GET    /api/badges/:id              // Get badge by ID
+GET    /api/badges/name/:name       // Get badges by name (partial match)
+GET    /api/badges/category/:category // Get badges by category
+GET    /api/badges/rarity/:rarity   // Get badges by rarity
+POST   /api/badges/names            // Get badges by array of names
+
 //  AI CHAT ROUTES
 POST   /api/chat/message             // Send message to AI
 GET    /api/chat/history             // Get chat history

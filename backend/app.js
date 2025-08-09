@@ -13,7 +13,8 @@ const budgetRoutes = require('./routes/budgetRoute');
 const gamificationRoutes = require('./routes/gamificationRoute');
 const chatRoutes = require('./routes/chatRoute');
 const goalRoutes = require('./routes/goalRoute');        
-const toolsRoutes = require('./routes/toolsRoute');  
+const toolsRoutes = require('./routes/toolsRoute');
+const badgeRoutes = require('./routes/badgeRoute');  
 
 const app = express();
 
@@ -46,7 +47,8 @@ app.use('/api/budget', budgetRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/goals', goalRoutes);        
-app.use('/api/tools', toolsRoutes);       
+app.use('/api/tools', toolsRoutes);
+app.use('/api/badges', badgeRoutes);       
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

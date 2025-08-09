@@ -1,16 +1,21 @@
 import api from "./api";
 
 export const login = async (email, password) => {
-  const res = await api.post("/auth/login", { email, password });
-  if (res.data.success && res.data.token) {
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-  }
+  try{
+    const res = await api.post("/auth/login", { email, password });
+    if (res.data.success && res.data.token) {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+    }
 
-  // Update streak after login
-  await api.post("/gamification/update-streak");
-  console.log(res.data)
-  return res.data;
+    // Update streak after login
+    await api.post("/gamification/update-streak");
+    console.log(res.data)
+    return res.data;
+  }catch (err) {
+    console.error(err.message);
+    throw(err);
+  }
 };
 
 export const register = async (data) => {

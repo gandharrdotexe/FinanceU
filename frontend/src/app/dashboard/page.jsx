@@ -669,7 +669,7 @@ export default function Dashboard() {
                               style={{ width: `${goal.progressPercentage}%` }}
                             />
                           </div>
-                          <span className="text-gray-600 dark:text-gray-300 text-sm">{goal.progressPercentage}%</span>
+                          <span className="text-gray-600 dark:text-gray-300 text-sm">{Math.floor(goal.progressPercentage)}%</span>
                         </div>
                       </motion.div>
                     ))}

@@ -42,9 +42,12 @@ import {
   getQuickTip
 } from '@/services/chatServices'
 import { getBudget } from '@/services/budgetServices'
+import useAuth from '@/hooks/useAuth'
 
 
 export default function MentorPage() {
+
+  useAuth();
   const pathname = usePathname();
   
   const isActive = (path) => {

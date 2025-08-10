@@ -1,6 +1,7 @@
 const Goal = require('../models/goalModel');
 const User = require('../models/userModel');
 const { calculateXPForAction, calculateLevel } = require('../utils/gamification');
+const { evaluateAndAwardBadges } = require('../utils/gamification');
 
 // Get user goals
 const getUserGoals = async (req, res) => {
@@ -124,6 +125,9 @@ const addMilestone = async (req, res) => {
       user.gamification.totalXP += calculateXPForAction('achieve_goal');
       user.gamification.level = calculateLevel(user.gamification.totalXP);
       await user.save();
+
+      // Auto-award any eligible badges tied to goals
+      await evaluateAndAwardBadges(user._id);
     }
 
     await goal.save();

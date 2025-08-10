@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Box,
@@ -28,12 +28,20 @@ import {
   CreditCard as CreditCardIcon
 } from '@mui/icons-material'
 import Link from 'next/link'
-import { useTheme,toggleTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import { logout } from '@/services/authServices';
 import { LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-
+import { 
+  sendMessageToAI,
+  getChatHistory as fetchChatHistory,
+  clearChatHistory,
+  analyzeBudgetWithAI,
+  getLearningPath,
+  getQuickTip
+} from '@/services/chatServices'
+import { getBudget } from '@/services/budgetServices'
 
 
 export default function MentorPage() {
@@ -44,7 +52,7 @@ export default function MentorPage() {
   };
   const [messages, setMessages] = useState([
     {
-      id: '1',
+      id: 'welcome',
       content: "Hi! I'm your AI Financial Mentor. I'm here to help you with budgeting, saving, investing, and any other money questions you have as a student. What would you like to learn about today?",
       sender: 'ai',
       timestamp: new Date()
@@ -53,8 +61,83 @@ export default function MentorPage() {
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { theme, toggleTheme } = useTheme()
+  const messagesEndRef = useRef(null)
+  const [isMounted, setIsMounted] = useState(false)
 
-  
+  const LOCAL_STORAGE_KEY = 'mentorChatMessages'
+
+  const saveMessagesToLocal = (msgs) => {
+    try {
+      const serializable = msgs.map(m => ({
+        ...m,
+        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp
+      }));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(serializable))
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const loadMessagesFromLocal = () => {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
+      if (!raw) return null
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed) || parsed.length === 0) return null
+      return parsed.map(m => ({
+        ...m,
+        timestamp: m.timestamp ? new Date(m.timestamp) : new Date()
+      }))
+    } catch (e) {
+      return null
+    }
+  }
+
+  const clearLocalMessages = () => {
+    try { localStorage.removeItem(LOCAL_STORAGE_KEY) } catch (e) { /* ignore */ }
+  }
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const historyRes = await fetchChatHistory();
+        if (historyRes?.success && Array.isArray(historyRes.conversation) && historyRes.conversation.length > 0) {
+          const mapped = historyRes.conversation.map((item, index) => ({
+            id: `${index}-${item.timestamp}`,
+            content: item.message,
+            sender: item.role === 'assistant' ? 'ai' : 'user',
+            timestamp: item.timestamp ? new Date(item.timestamp) : new Date()
+          }));
+          setMessages(mapped);
+          return;
+        }
+        // fallback to local storage if server has no history
+        const localMsgs = loadMessagesFromLocal();
+        if (localMsgs) setMessages(localMsgs)
+      } catch (err) {
+        // fallback to local storage on failure
+        const localMsgs = loadMessagesFromLocal();
+        if (localMsgs) setMessages(localMsgs)
+      }
+    };
+    loadHistory();
+  }, [])
+
+  useEffect(() => {
+    // persist messages locally except the default single welcome message
+    if (messages && (messages.length > 1 || (messages[0]?.id !== 'welcome'))) {
+      saveMessagesToLocal(messages)
+    }
+  }, [messages])
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [messages, isLoading])
+
+  useEffect(() => { setIsMounted(true) }, [])
+
   const quickQuestions = [
     { icon: PiggyBankIcon, text: "How much should I save each month?", category: "Savings" },
     { icon: TrendingUpIcon, text: "What's the best investment for students?", category: "Investing" },
@@ -76,43 +159,108 @@ export default function MentorPage() {
     setInputMessage('')
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await sendMessageToAI(content.trim())
       const aiResponse = {
         id: (Date.now() + 1).toString(),
-        content: getAIResponse(content),
+        content: res?.message || 'Sorry, I could not generate a response right now.',
         sender: 'ai',
         timestamp: new Date()
       }
       setMessages(prev => [...prev, aiResponse])
+    } catch (err) {
+      setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), content: 'There was an error contacting the AI. Please try again.', sender: 'ai', timestamp: new Date() }])
+    } finally {
       setIsLoading(false)
-    }, 1500)
-  }
-
-  const getAIResponse = (question) => {
-    const lowerQuestion = question.toLowerCase()
-    
-    if (lowerQuestion.includes('save') || lowerQuestion.includes('saving')) {
-      return "Great question! As a student, I recommend following the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings. Even if you can only save ₹500-1000 per month, that's a fantastic start! The key is consistency. Would you like me to help you create a personalized savings plan?"
     }
-    
-    if (lowerQuestion.includes('invest') || lowerQuestion.includes('investment')) {
-      return "For students, I recommend starting with low-risk options like SIP (Systematic Investment Plans) in mutual funds. You can start with as little as ₹500 per month! Focus on large-cap equity funds or balanced funds initially. Remember, time is your biggest advantage - starting early, even with small amounts, can lead to significant wealth creation due to compound interest."
-    }
-    
-    if (lowerQuestion.includes('credit card')) {
-      return "Credit cards can be useful for building credit history, but they require discipline! If you get one, follow these rules: 1) Never spend more than you can pay back immediately, 2) Always pay the full amount before the due date, 3) Keep your credit utilization below 30%. Consider starting with a student credit card with a low limit to build good habits."
-    }
-    
-    if (lowerQuestion.includes('budget')) {
-      return "Budgeting is the foundation of financial success! Start by tracking your expenses for a week to understand your spending patterns. Then use the 50/30/20 rule: 50% for essentials (food, transport, books), 30% for entertainment and wants, 20% for savings and investments. Use apps or a simple spreadsheet to track everything. Would you like help setting up your first budget?"
-    }
-    
-    return "That's an interesting question! Personal finance can seem complex, but it's really about building good habits. Whether it's about budgeting, saving, investing, or managing debt, the key is to start small and be consistent. Could you tell me more specifically what aspect of finance you'd like to focus on? I'm here to provide personalized advice based on your situation as a student."
   }
 
   const handleQuickQuestion = (question) => {
     handleSendMessage(question)
+  }
+
+  const handleQuickTip = async () => {
+    setIsLoading(true)
+    try {
+      const res = await getQuickTip();
+      const tip = res?.tip || 'No tip available right now.'
+      setMessages(prev => [...prev, { id: `tip-${Date.now()}`, content: `Quick Tip: ${tip}`, sender: 'ai', timestamp: new Date() }])
+    } catch (e) {
+      setMessages(prev => [...prev, { id: `tip-${Date.now()}`, content: 'Failed to fetch a quick tip.', sender: 'ai', timestamp: new Date() }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAnalyzeBudget = async () => {
+    setIsLoading(true)
+    try {
+      const budgetRes = await getBudget();
+      const b = budgetRes?.budget;
+      const payload = {
+        totalIncome: b?.health?.totalIncome ?? 0,
+        expenses: b?.expenses || [],
+        savingsRate: b?.health?.savingsRate ?? 0
+      };
+      const res = await analyzeBudgetWithAI(payload);
+      const analysis = res?.analysis || 'No analysis available.'
+      setMessages(prev => [...prev, { id: `analysis-${Date.now()}`, content: analysis, sender: 'ai', timestamp: new Date() }])
+    } catch (e) {
+      setMessages(prev => [...prev, { id: `analysis-${Date.now()}`, content: 'Failed to analyze your budget.', sender: 'ai', timestamp: new Date() }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleLearningPath = async () => {
+    setIsLoading(true)
+    try {
+      const res = await getLearningPath();
+      const recsData = res?.recommendations;
+      let content = 'No recommendations available right now.'
+
+      if (Array.isArray(recsData) && recsData.length > 0) {
+        content = `Recommended Learning Path:\n- ${recsData.join('\n- ')}`
+      } else if (typeof recsData === 'string') {
+        // Try to use the string directly; if it's empty, attempt to parse into bullets
+        const trimmed = recsData.trim()
+        if (trimmed) {
+          // If the text already looks like a list, keep it. Otherwise, split lines into bullets.
+          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+          if (lines.length > 1) {
+            content = `Recommended Learning Path:\n- ${lines.join('\n- ')}`
+          } else {
+            content = trimmed
+          }
+        }
+      }
+
+      setMessages(prev => [...prev, { id: `recs-${Date.now()}`, content, sender: 'ai', timestamp: new Date() }])
+    } catch (e) {
+      setMessages(prev => [...prev, { id: `recs-${Date.now()}`, content: 'Failed to fetch learning recommendations.', sender: 'ai', timestamp: new Date() }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleClearHistory = async () => {
+    setIsLoading(true)
+    try {
+      await clearChatHistory();
+      clearLocalMessages();
+      setMessages([
+        {
+          id: 'welcome',
+          content: "Hi! I'm your AI Financial Mentor. I'm here to help you with budgeting, saving, investing, and any other money questions you have as a student. What would you like to learn about today?",
+          sender: 'ai',
+          timestamp: new Date()
+        }
+      ])
+    } catch (e) {
+      setMessages(prev => [...prev, { id: `clear-${Date.now()}`, content: 'Failed to clear chat history.', sender: 'ai', timestamp: new Date() }])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -183,7 +331,7 @@ export default function MentorPage() {
       <motion.div
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100 }}
+      transition={{ type: 'spring', stiffness: 100 }}
     >
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -260,7 +408,7 @@ export default function MentorPage() {
     </motion.div>
 
       <Container maxWidth="lg" sx={{ pt: 4 }} >
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 2 }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }} className="font-bold mb-1 text-gray-900 dark:text-gray-100">
             AI Financial Mentor 🤖
           </Typography>
@@ -269,8 +417,23 @@ export default function MentorPage() {
           </Typography>
         </Box>
 
+        <Grid container spacing={1} sx={{ mb: 3 }}>
+          <Grid item>
+            <Button variant="outlined" onClick={handleQuickTip} disabled={isLoading}>Quick Tip</Button>
+          </Grid>
+          <Grid item>
+            <Button variant="outlined" onClick={handleAnalyzeBudget} disabled={isLoading}>Analyze My Budget</Button>
+          </Grid>
+          <Grid item>
+            <Button variant="outlined" onClick={handleLearningPath} disabled={isLoading}>Learning Path</Button>
+          </Grid>
+          <Grid item>
+            <Button color="error" variant="outlined" onClick={handleClearHistory} disabled={isLoading}>Clear History</Button>
+          </Grid>
+        </Grid>
+
         {/* Quick Questions */}
-        {messages.length === 1 && (
+        {messages.length === 1 && messages[0].id === 'welcome' && (
           <Card sx={{ mb: 4 }} className="bg-white dark:bg-gray-800">
             <CardHeader
               title={
@@ -361,8 +524,9 @@ export default function MentorPage() {
                             color: message.sender === 'user' ? 'rgba(255, 255, 255, 0.8)' : 'text.secondary'
                           }}
                           className="text-gray-600 dark:text-gray-400"
+                          suppressHydrationWarning
                         >
-                          {message.timestamp.toLocaleTimeString()}
+                          {isMounted ? (message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date(message.timestamp).toLocaleTimeString()) : ''}
                         </Typography>
                       </Box>
                     </Box>
@@ -386,6 +550,7 @@ export default function MentorPage() {
                   </Box>
                 </Box>
               )}
+              <div ref={messagesEndRef} />
             </Box>
           </CardContent>
         </Card>

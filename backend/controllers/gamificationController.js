@@ -2,7 +2,7 @@ const User = require('../models/userModel');
 const Badge = require('../models/badgeModel');
 const UserBadge = require('../models/userBadgeModel');
 const Module = require('../models/moduleModel');
-const { checkBadgeEligibility, calculateXPForAction } = require('../utils/gamification');
+const { checkBadgeEligibility, calculateXPForAction, evaluateAndAwardBadges } = require('../utils/gamification');
 
 // Get user progress and stats
 const getUserProgress = async (req, res) => {
@@ -128,40 +128,32 @@ const checkBadges = async (req, res) => {
     const { action } = req.body;
     
     const user = await User.findById(req.user._id);
-    const eligibleBadges = await checkBadgeEligibility(user, action);
 
-    const newBadges = [];
-    
-    for (const badgeName of eligibleBadges) {
+    // First, run the centralized evaluator
+    const autoAwarded = await evaluateAndAwardBadges(user._id);
+
+    // Then, include any quick action-based badges for backward compatibility
+    const eligibleByAction = await checkBadgeEligibility(user, action);
+    const additionallyAwarded = [];
+    for (const badgeName of eligibleByAction) {
       const badge = await Badge.findOne({ name: badgeName });
-      if (badge) {
-        // Check if user already has this badge
-        const existingUserBadge = await UserBadge.findOne({
-          userId: user._id,
-          badgeId: badge._id
-        });
-
-        if (!existingUserBadge) {
-          // Award badge
-          const userBadge = new UserBadge({
-            userId: user._id,
-            badgeId: badge._id,
-            earnedAt: new Date()
-          });
-          await userBadge.save();
-
-          // Add XP bonus
-          user.gamification.totalXP += badge.xpBonus;
-          user.gamification.badges.push(badge.name);
-
-          newBadges.push(badge);
-        }
+      if (!badge) continue;
+      const exists = await UserBadge.findOne({ userId: user._id, badgeId: badge._id });
+      if (exists) continue;
+      const ub = new UserBadge({ userId: user._id, badgeId: badge._id, earnedAt: new Date() });
+      try { await ub.save(); } catch (_) {}
+      user.gamification.totalXP += badge.xpBonus;
+      user.gamification.level = calculateXPForAction ? user.gamification.level : user.gamification.level; // no-op
+      if (!user.gamification.badges.includes(badge.name)) {
+        user.gamification.badges.push(badge.name);
       }
+      additionallyAwarded.push(badge);
     }
-
-    if (newBadges.length > 0) {
+    if (additionallyAwarded.length > 0) {
       await user.save();
     }
+
+    const newBadges = [...autoAwarded, ...additionallyAwarded];
 
     res.json({
       success: true,

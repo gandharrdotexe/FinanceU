@@ -1,6 +1,7 @@
 const Budget = require('../models/budgetModel');
 const User = require('../models/userModel');
-const { calculateBudgetHealth, calculateXPForAction, calculateLevel } = require('../utils/calculations');
+const { calculateBudgetHealth } = require('../utils/calculations');
+const { calculateXPForAction, calculateLevel, evaluateAndAwardBadges } = require('../utils/gamification');
 
 // Get current month budget
 const getCurrentBudget = async (req, res) => {
@@ -57,7 +58,24 @@ const createOrUpdateBudget = async (req, res) => {
     if (budget) {
       // Update existing budget
       if (income) budget.income = income;
-      if (expenses) budget.expenses = expenses;
+
+      // Merge expenses by category to preserve existing transactions
+      if (expenses) {
+        const existingExpenses = Array.isArray(budget.expenses) ? budget.expenses : [];
+        const mergedExpenses = expenses.map((incomingExpense) => {
+          const existing = existingExpenses.find((e) => e.category === incomingExpense.category);
+          return {
+            category: incomingExpense.category,
+            budgeted: incomingExpense.budgeted,
+            // Prefer provided actual, otherwise keep existing actual (or 0)
+            actual: typeof incomingExpense.actual === 'number' ? incomingExpense.actual : (existing?.actual ?? 0),
+            // Always preserve existing transactions unless explicitly provided
+            transactions: existing?.transactions || []
+          };
+        });
+        budget.expenses = mergedExpenses;
+      }
+
       if (goals) budget.goals = goals;
     } else {
       // Create new budget
@@ -79,6 +97,9 @@ const createOrUpdateBudget = async (req, res) => {
       user.gamification.level = calculateLevel(user.gamification.totalXP);
       await user.save();
     }
+
+    // Evaluate badges after any budget change (new or update)
+    await evaluateAndAwardBadges(req.user._id);
 
     // Calculate budget health
     const healthData = calculateBudgetHealth(budget.income, budget.expenses);

@@ -22,8 +22,8 @@ import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
   const router = useRouter();
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('demo@financeu.com')
+  const [password, setPassword] = useState('demo123')
   const [error, setError] = useState('')
   const { theme } = useTheme()
 

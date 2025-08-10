@@ -81,9 +81,9 @@ const login = async (req, res) => {
       });
     }
 
-    // Update last active
-    user.gamification.lastActiveDate = new Date();
-    await user.save();
+    // Note: Do not update lastActiveDate here. The streak update endpoint
+    // handles both the streak increment/reset and lastActiveDate update
+    // atomically based on the previous value.
 
     // Generate token
     const token = jwt.sign(

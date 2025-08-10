@@ -6,6 +6,7 @@ const {
   getUserAchievements, 
   checkBadges 
 } = require('../controllers/gamificationController');
+const { evaluateAndAwardBadges } = require('../utils/gamification');
 
 const router = express.Router();
 
@@ -27,31 +28,48 @@ router.post('/update-streak', auth, async (req, res) => {
     const User = require('../models/userModel');
     const user = await User.findById(req.user._id);
     
-    const today = new Date();
-    const lastActive = user.gamification.lastActiveDate;
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Ensure gamification object exists for older records
+    user.gamification = user.gamification || {};
+    if (typeof user.gamification.streak !== 'number') user.gamification.streak = 0;
+
+    const now = new Date();
+    const lastActive = user.gamification.lastActiveDate ? new Date(user.gamification.lastActiveDate) : null;
+
+    // Normalize to calendar day difference (UTC) to avoid time-of-day issues
+    const toUtcDateOnly = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const todayUtc = toUtcDateOnly(now);
     
     if (lastActive) {
-      const daysDiff = Math.floor((today - lastActive) / (1000 * 60 * 60 * 24));
-      
+      const lastUtc = toUtcDateOnly(lastActive);
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const daysDiff = Math.floor((todayUtc - lastUtc) / msPerDay);
+
       if (daysDiff === 1) {
-        // Consecutive day
         user.gamification.streak += 1;
       } else if (daysDiff > 1) {
-        // Streak broken
         user.gamification.streak = 1;
       }
-      // Same day = no change
+      // Same calendar day: no change
     } else {
-      // First login
+      // First login ever
       user.gamification.streak = 1;
     }
-    
-    user.gamification.lastActiveDate = today;
+
+    user.gamification.lastActiveDate = now;
     await user.save();
+
+    // Auto-award badges tied to streaks
+    const newBadges = await evaluateAndAwardBadges(user._id);
 
     res.json({
       success: true,
-      streak: user.gamification.streak
+      streak: user.gamification.streak,
+      lastActiveDate: user.gamification.lastActiveDate,
+      newBadges
     });
   } catch (error) {
     res.status(500).json({

@@ -9,7 +9,22 @@ export const login = async (email, password) => {
     }
 
     // Update streak after login
-    await api.post("/gamification/update-streak");
+    const streakRes = await api.post("/gamification/update-streak");
+    const updatedStreak = streakRes?.data?.streak ?? null;
+    if (updatedStreak !== null) {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        user.gamification = user.gamification || {};
+        user.gamification.streak = updatedStreak;
+        user.gamification.lastActiveDate = streakRes?.data?.lastActiveDate;
+        localStorage.setItem("user", JSON.stringify(user));
+        if (res?.data?.user) {
+          res.data.user.gamification = res.data.user.gamification || {};
+          res.data.user.gamification.streak = updatedStreak;
+          res.data.user.gamification.lastActiveDate = streakRes?.data?.lastActiveDate;
+        }
+      } catch (_) {}
+    }
     console.log(res.data)
     return res.data;
   }catch (err) {

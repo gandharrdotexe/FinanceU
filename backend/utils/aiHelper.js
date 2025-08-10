@@ -45,7 +45,7 @@ const analyzeBudgetWithAI = async (budgetData) => {
     Savings Rate: ${budgetData.savingsRate}%
     
     Provide specific, actionable advice for improving their financial health.
-    Focus on student-friendly suggestions.
+    Focus on student-friendly suggestions. Also don't give me markdown format.
   `;
 
   try {
@@ -61,13 +61,13 @@ const analyzeBudgetWithAI = async (budgetData) => {
 
 const generatePersonalizedLearningPath = async (userProfile, completedModules) => {
   const prompt = `
-    Create a personalized learning path for this student:
+    Create a personalized learning path for me:
     
     Profile: ${JSON.stringify(userProfile)}
     Completed Modules: ${completedModules.length} modules done
     
-    Suggest the next 3 most relevant financial literacy topics they should learn.
-    Consider their income level, goals, and current knowledge.
+    Suggest the next 3 most relevant financial literacy topics I should learn.
+    Consider their income level, goals, and current knowledge. Also don't give me markdown format.
   `;
 
   try {

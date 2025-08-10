@@ -1,5 +1,5 @@
 const { generateFinancialAdvice, analyzeBudgetWithAI, generatePersonalizedLearningPath } = require('../utils/aiHelper');
-const Chat = require('../models/ChatModel.js');
+const Chat = require('../models/chatModel.js');
 const User = require('../models/userModel.js');
 
 // Send message to AI chatbot

@@ -20,11 +20,39 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true
-  }));
-app.options("*", cors()); 
+
+// Robust CORS configuration that supports multiple origins and normalizes env values
+const allowedOriginsFromEnv = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_2,
+  process.env.FRONTEND_URL_3,
+  'http://localhost:3000',
+  'https://finance-u.vercel.app'
+].filter(Boolean);
+
+const normalizedAllowedOrigins = allowedOriginsFromEnv
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0)
+  .map((value) => (value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`))
+  .map((value) => value.replace(/\/$/, ''));
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow non-browser requests with no Origin header (e.g., health checks)
+    if (!origin) {
+      return callback(null, true);
+    }
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const isAllowed = normalizedAllowedOrigins.includes(normalizedOrigin);
+    return callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Rate limiting

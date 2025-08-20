@@ -5,10 +5,20 @@ import { motion } from 'framer-motion';
 import { BookOpen, Target, Bot, Trophy, TrendingUp, Users } from 'lucide-react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useEffect } from 'react'
 import '../globals.css'
 
 export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const fetchData = () => {
+      for(let i = 0; i < 10; i++){
+        const res = fetch("https://financeu.onrender.com/api/health");
+      }
+    };
+    fetchData();
+  }, []);
 
   // Animation variants
   const containerVariants = {

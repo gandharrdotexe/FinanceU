@@ -9,7 +9,11 @@ const calculateXPForAction = (action) => {
     'daily_login': 5,
     'first_budget': 30,
     'achieve_goal': 100,
-    'share_achievement': 10
+    'share_achievement': 10,
+    'answer_question': 15,
+    'first_answer': 25,
+    'helpful_answer': 20,
+    'accepted_answer': 50
   };
   return xpMap[action] || 0;
 };
@@ -38,6 +42,7 @@ const Module = require('../models/moduleModel');
 const Progress = require('../models/progressModel');
 const Budget = require('../models/budgetModel');
 const Goal = require('../models/goalModel');
+const Answer = require('../models/answerModel');
 const { calculateBudgetHealth } = require('./calculations');
 
 const areMonthsConsecutive = (prevYYYYMM, nextYYYYMM) => {
@@ -88,6 +93,15 @@ const evaluateAndAwardBadges = async (userId) => {
     return investingModules.length;
   })();
   const budgetsPromise = Budget.find({ userId: user._id }).sort({ month: 1 });
+  
+  // Answer-related metrics
+  const totalAnswersCountPromise = Answer.countDocuments({ userId: user._id });
+  const acceptedAnswersCountPromise = Answer.countDocuments({ userId: user._id, isAccepted: true });
+  const helpfulAnswersCountPromise = Answer.countDocuments({ userId: user._id, upvotes: { $gte: 5 } });
+  const answersTodayCountPromise = Answer.countDocuments({
+    userId: user._id,
+    createdAt: { $gte: startOfTodayUtc(), $lt: endOfTodayUtc() }
+  });
 
   const [
     budgetsCreatedCount,
@@ -95,14 +109,22 @@ const evaluateAndAwardBadges = async (userId) => {
     goalsAchievedCount,
     modulesCompletedToday,
     investingCompletedCount,
-    budgets
+    budgets,
+    totalAnswersCount,
+    acceptedAnswersCount,
+    helpfulAnswersCount,
+    answersTodayCount
   ] = await Promise.all([
     budgetsCreatedCountPromise,
     perfectQuizzesCountPromise,
     goalsAchievedCountPromise,
     modulesCompletedTodayPromise,
     investingCompletedCountPromise,
-    budgetsPromise
+    budgetsPromise,
+    totalAnswersCountPromise,
+    acceptedAnswersCountPromise,
+    helpfulAnswersCountPromise,
+    answersTodayCountPromise
   ]);
 
   // Compute current consecutive positive savings months ending with most recent budget
@@ -184,6 +206,28 @@ const evaluateAndAwardBadges = async (userId) => {
       meets = meets && consecutiveSavingsMonths >= Number(c.consecutiveSavingsMonths);
       recognizedCount += 1;
     }
+    
+    // Answer-related criteria
+    if (Object.prototype.hasOwnProperty.call(c, 'totalAnswers')) {
+      meets = meets && totalAnswersCount >= Number(c.totalAnswers);
+      recognizedCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(c, 'acceptedAnswers')) {
+      meets = meets && acceptedAnswersCount >= Number(c.acceptedAnswers);
+      recognizedCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(c, 'helpfulAnswers')) {
+      meets = meets && helpfulAnswersCount >= Number(c.helpfulAnswers);
+      recognizedCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(c, 'answersInOneDay')) {
+      meets = meets && answersTodayCount >= Number(c.answersInOneDay);
+      recognizedCount += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(c, 'firstAnswer') && c.firstAnswer === true) {
+      meets = meets && totalAnswersCount >= 1;
+      recognizedCount += 1;
+    }
 
     // If we didn't recognize any of the provided criteria keys, do NOT award this badge
     if (recognizedCount === 0) continue;
@@ -220,9 +264,35 @@ const evaluateAndAwardBadges = async (userId) => {
   return newlyAwarded;
 };
 
+// Function to award badges specifically for answer actions
+const awardAnswerBadges = async (userId, action = 'answer_question') => {
+  const user = await User.findById(userId);
+  if (!user) return [];
+
+  // Award XP for the action
+  const xpGained = calculateXPForAction(action);
+  if (xpGained > 0) {
+    user.gamification = user.gamification || {};
+    user.gamification.totalXP = (user.gamification.totalXP || 0) + xpGained;
+    user.gamification.level = calculateLevel(user.gamification.totalXP);
+    await user.save();
+  }
+
+  // Evaluate and award badges
+  const newlyAwarded = await evaluateAndAwardBadges(userId);
+  
+  return {
+    xpGained,
+    badgesAwarded: newlyAwarded,
+    newLevel: user.gamification?.level || 1,
+    totalXP: user.gamification?.totalXP || 0
+  };
+};
+
 module.exports = {
   calculateLevel,
   calculateXPForAction,
   checkBadgeEligibility,
-  evaluateAndAwardBadges
+  evaluateAndAwardBadges,
+  awardAnswerBadges
 };

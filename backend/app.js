@@ -15,6 +15,8 @@ const chatRoutes = require('./routes/chatRoute');
 const goalRoutes = require('./routes/goalRoute');        
 const toolsRoutes = require('./routes/toolsRoute');
 const badgeRoutes = require('./routes/badgeRoute');  
+const questionRoutes = require('./routes/questionRoute');
+const answerRoutes = require('./routes/answerRoute');
 
 const app = express();
 
@@ -77,6 +79,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/goals', goalRoutes);        
 app.use('/api/tools', toolsRoutes);
 app.use('/api/badges', badgeRoutes);       
+app.use('/api/questions', questionRoutes);
+app.use('/api/answers', answerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

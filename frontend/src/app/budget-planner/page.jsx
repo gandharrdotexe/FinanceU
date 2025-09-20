@@ -630,6 +630,15 @@ export default function BudgetPlannerPage() {
               Goals
             </Link>
             <Link 
+              href="/qna" 
+              className={`${isActive('/qna') ? 
+                'text-blue-600 dark:text-blue-400 font-medium' : 
+                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors no-underline`}
+            >
+              Q&A
+            </Link>
+            <Link 
               href="/mentor" 
               className={`${isActive('/mentor') ? 
                 'text-blue-600 dark:text-blue-400 font-medium' : 

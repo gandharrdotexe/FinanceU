@@ -26,7 +26,9 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
@@ -39,7 +41,10 @@ import {
   TrendingUp as TrendingUpIcon,
   Savings as PiggyBankIcon,
   CreditCard as CreditCardIcon,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Mic as MicIcon,
+  MicOff as MicOffIcon,
+  Stop as StopIcon
 } from '@mui/icons-material'
 import Link from 'next/link'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -84,8 +89,176 @@ export default function MentorPage() {
   const { theme, toggleTheme } = useTheme()
   const messagesEndRef = useRef(null)
   const [isMounted, setIsMounted] = useState(false)
+
+  // Voice recognition states
+  const [isListening, setIsListening] = useState(false)
+  const [speechRecognition, setSpeechRecognition] = useState(null)
+  const [speechSupported, setSpeechSupported] = useState(false)
+  const [voiceError, setVoiceError] = useState('')
+  const [showVoiceError, setShowVoiceError] = useState(false)
  
   const LOCAL_STORAGE_KEY = 'mentorChatMessages'
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setSpeechSupported(true);
+        
+        try {
+          const recognition = new SpeechRecognition();
+          
+          // Configure recognition settings
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+          recognition.maxAlternatives = 1;
+
+          // Handle speech recognition results
+          recognition.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+              } else {
+                interimTranscript += transcript;
+              }
+            }
+
+            // Update input with final transcript, show interim in real-time
+            if (finalTranscript) {
+              setInputMessage(prev => {
+                const newMessage = prev + finalTranscript + ' ';
+                return newMessage.trim();
+              });
+            }
+          };
+
+          // Handle recognition start
+          recognition.onstart = () => {
+            console.log('Speech recognition started');
+            setVoiceError('');
+            setShowVoiceError(false);
+          };
+
+          // Handle recognition end
+          recognition.onend = () => {
+            console.log('Speech recognition ended');
+            setIsListening(false);
+          };
+
+          // Handle recognition errors
+          recognition.onerror = (event) => {
+            console.warn('Speech recognition error:', event.error);
+            setIsListening(false);
+            
+            let errorMessage = 'Speech recognition failed. ';
+            let showError = true;
+            
+            switch (event.error) {
+              case 'no-speech':
+                errorMessage += 'No speech was detected. Please try again.';
+                break;
+              case 'audio-capture':
+                errorMessage += 'No microphone was found. Please check your microphone settings.';
+                break;
+              case 'not-allowed':
+                errorMessage += 'Microphone access was denied. Please allow microphone access and try again.';
+                break;
+              case 'network':
+                errorMessage += 'Unable to connect to speech service. Please check your internet connection and try again.';
+                // Don't show error immediately for network issues, let user try again
+                showError = false;
+                break;
+              case 'service-not-allowed':
+                errorMessage += 'Speech service is not available. Please try typing instead.';
+                break;
+              case 'bad-grammar':
+                errorMessage += 'Grammar error in speech recognition. Please try again.';
+                showError = false;
+                break;
+              case 'language-not-supported':
+                errorMessage += 'Language not supported. Switching to English.';
+                break;
+              default:
+                errorMessage += 'Please try again or use typing instead.';
+                showError = false;
+            }
+            
+            if (showError) {
+              setVoiceError(errorMessage);
+              setShowVoiceError(true);
+            }
+          };
+
+          setSpeechRecognition(recognition);
+        } catch (error) {
+          console.warn('Failed to initialize speech recognition:', error);
+          setSpeechSupported(false);
+        }
+      } else {
+        setSpeechSupported(false);
+        console.log('Speech Recognition API not supported in this browser');
+      }
+    }
+  }, []);
+
+  // Voice recognition functions
+  const startListening = () => {
+    if (speechRecognition && speechSupported && !isListening) {
+      try {
+        // Clear any previous errors
+        setVoiceError('');
+        setShowVoiceError(false);
+        
+        // Reset recognition settings
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = true;
+        speechRecognition.lang = 'en-US';
+        
+        setIsListening(true);
+        speechRecognition.start();
+      } catch (error) {
+        console.warn('Error starting speech recognition:', error);
+        setIsListening(false);
+        setVoiceError('Failed to start speech recognition. Please try again.');
+        setShowVoiceError(true);
+      }
+    }
+  };
+
+  const stopListening = () => {
+    if (speechRecognition && isListening) {
+      try {
+        speechRecognition.stop();
+        setIsListening(false);
+      } catch (error) {
+        console.warn('Error stopping speech recognition:', error);
+        setIsListening(false);
+      }
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (speechRecognition && isListening) {
+        speechRecognition.stop();
+      }
+    };
+  }, [speechRecognition, isListening]);
  
   const saveMessagesToLocal = (msgs) => {
     try {
@@ -179,6 +352,11 @@ export default function MentorPage() {
   const handleSendMessage = async (e) => {
     e?.preventDefault()
     if (!inputMessage.trim() || isLoading) return
+
+    // Stop listening when sending message
+    if (isListening) {
+      stopListening();
+    }
  
     const userMessage = {
       id: Date.now().toString(),
@@ -226,7 +404,8 @@ export default function MentorPage() {
   }
  
   const handleQuickQuestion = (question) => {
-    handleSendMessage(question)
+    setInputMessage(question)
+    // Don't auto-send, let user review the question first
   }
  
   const handleQuickTip = async () => {
@@ -358,58 +537,78 @@ export default function MentorPage() {
       setIsLoading(false);
     }
   };
+
+  // Close voice error snackbar
+  const handleCloseVoiceError = () => {
+    setShowVoiceError(false);
+  };
  
   return (
     <Box className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-12">
-      {/* Header */}
-      {/* <Paper
-        elevation={0}
-        sx={{
-          borderBottom: '1px solid #e0e0e0',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(10px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000
-        }}
-        className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 backdrop-blur-sm"
+      <motion.div
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 100 }}
       >
-        <Container maxWidth="lg">
-          <Box
-          className="flex items-center justify-between py-2"
-          >
-            <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-              <Box className="flex items-center gap-1">
-                <Box sx={{
-                  width: 32,
-                  height: 32,
-                  background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Typography className="text-white font-bold text-sm">
-                    F
-                  </Typography>
-                </Box>
-                    <Typography sx={{
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                  background: 'linear-gradient(135deg, #1976d2 0%, #7c4dff 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
-                  Vikas.AI
-                </Typography>
-              </Box>
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center gap-2 no-underline">
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center"
+              >
+                <span className="text-white font-bold text-sm">F</span>
+              </motion.div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                FinanceU
+              </span>
             </Link>
-            <div className="flex items-center gap-2">
-            <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 px-3 py-1 rounded-md text-sm font-medium">
-              Ai Mentor Online <BotIcon sx={{ fontSize: 16, mr: 0.5 }} />
-            </div>
-            <button
+           
+            <nav className="flex items-center gap-6">
+              <Link
+                href="/dashboard"
+                className={`${isActive('/dashboard') ?
+                  'text-blue-600 dark:text-blue-400 font-medium' :
+                  'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                } transition-colors no-underline`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/budget-planner"
+                className={`${isActive('/budget-planner') ?
+                  'text-blue-600 dark:text-blue-400 font-medium' :
+                  'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                } transition-colors no-underline`}
+              >
+                Budget
+              </Link>
+              <Link
+                href="/goals"
+                className={`${isActive('/goals') ?
+                  'text-blue-600 dark:text-blue-400 font-medium' :
+                  'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                } transition-colors no-underline`}
+              >
+                Goals
+              </Link>
+              <Link
+                href="/mentor"
+                className={`${isActive('/mentor') ?
+                  'text-blue-600 dark:text-blue-400 font-medium' :
+                  'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                } transition-colors no-underline`}
+              >
+                AI Mentor
+              </Link>
+              <button
+                onClick={logout}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                <LogOut size={20} />
+              </button>
+              <button
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 aria-label="Toggle theme"
@@ -420,88 +619,10 @@ export default function MentorPage() {
                   <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 )}
               </button>
-              </div>
-          </Box>
-        </Container>
-      </Paper> */}
-      <motion.div
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 100 }}
-    >
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 no-underline">
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-              className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center"
-            >
-              <span className="text-white font-bold text-sm">F</span>
-            </motion.div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              FinanceU
-            </span>
-          </Link>
-         
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/dashboard"
-              className={`${isActive('/dashboard') ?
-                'text-blue-600 dark:text-blue-400 font-medium' :
-                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
-              } transition-colors no-underline`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/budget-planner"
-              className={`${isActive('/budget-planner') ?
-                'text-blue-600 dark:text-blue-400 font-medium' :
-                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
-              } transition-colors no-underline`}
-            >
-              Budget
-            </Link>
-            <Link
-              href="/goals"
-              className={`${isActive('/goals') ?
-                'text-blue-600 dark:text-blue-400 font-medium' :
-                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
-              } transition-colors no-underline`}
-            >
-              Goals
-            </Link>
-            <Link
-              href="/mentor"
-              className={`${isActive('/mentor') ?
-                'text-blue-600 dark:text-blue-400 font-medium' :
-                'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
-              } transition-colors no-underline`}
-            >
-              AI Mentor
-            </Link>
-            <button
-              onClick={logout}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
-            >
-              <LogOut size={20} />
-            </button>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? (
-                <MoonIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-              ) : (
-                <SunIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-              )}
-            </button>
-          </nav>
-        </div>
-      </header>
-    </motion.div>
+            </nav>
+          </div>
+        </header>
+      </motion.div>
  
       <Container maxWidth="lg" sx={{ pt: 4 }} >
         <Box sx={{ mb: 2 }}>
@@ -859,66 +980,119 @@ export default function MentorPage() {
                     ))}
                   </Select>
                 </FormControl>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Ask me anything about personal finance..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
-                  disabled={isLoading}
-                  size="small"
-                  sx={{
-                    '& .MuiInputBase-input': {
-                      color: theme === 'dark' ? 'white' : 'inherit'
-                    },
-                    '& .MuiInputBase-input::placeholder': {
-                      color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                      opacity: 1
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.87)'
+                <Box sx={{ display: 'flex', width: '100%', position: 'relative' }}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Ask me anything about personal finance..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
+                    disabled={isLoading}
+                    size="small"
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        color: theme === 'dark' ? 'white' : 'inherit',
+                        pr: speechSupported ? '48px' : '12px' // Add padding for mic button
                       },
-                      '&:hover fieldset': {
-                        borderColor: theme === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.87)'
+                      '& .MuiInputBase-input::placeholder': {
+                        color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                        opacity: 1
                       },
-                      '&.Mui-focused fieldset': {
-                        borderColor: 'rgba(59, 130, 246, 0.8)'
-                      },
-                      backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'transparent'
-                    }
-                  }}
-                />
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.87)'
+                        },
+                        '&:hover fieldset': {
+                          borderColor: theme === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.87)'
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: 'rgba(59, 130, 246, 0.8)'
+                        },
+                        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'transparent'
+                      }
+                    }}
+                  />
+                  {/* Voice Input Button */}
+                  {speechSupported && (
+                    <IconButton
+                      onClick={toggleListening}
+                      disabled={isLoading}
+                      sx={{
+                        position: 'absolute',
+                        right: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: isListening ? 'error.main' : 'primary.main',
+                        backgroundColor: isListening ? 'error.light' : 'transparent',
+                        '&:hover': {
+                          backgroundColor: isListening ? 'error.light' : 'primary.light'
+                        },
+                        transition: 'all 0.2s ease',
+                        animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%': {
+                            transform: 'translateY(-50%) scale(1)',
+                          },
+                          '50%': {
+                            transform: 'translateY(-50%) scale(1.1)',
+                          },
+                          '100%': {
+                            transform: 'translateY(-50%) scale(1)',
+                          },
+                        }
+                      }}
+                      size="small"
+                      title={isListening ? 'Stop listening' : 'Start voice input'}
+                    >
+                      {isListening ? <MicOffIcon /> : <MicIcon />}
+                    </IconButton>
+                  )}
+                </Box>
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
-              {/* <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleStockAnalysis}
-                disabled={isLoading}
-                startIcon={<TrendingUpIcon />}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Stock Analysis
-              </Button> */}
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSendMessage}
-                disabled={isLoading || !inputMessage.trim()}
-                endIcon={isLoading ? <CircularProgress size={20} /> : <SendIcon />}
-              >
-                {isLoading ? 'Sending...' : 'Send'}
-              </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSendMessage}
+                  disabled={isLoading || !inputMessage.trim()}
+                  endIcon={isLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                >
+                  {isLoading ? 'Sending...' : 'Send'}
+                </Button>
+              </Box>
             </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }} className="text-gray-600 dark:text-gray-400">
+                💡 Tip: Ask specific questions like "How much should I save for an emergency fund?" for better advice
+              </Typography>
+              {speechSupported && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <MicIcon fontSize="inherit" />
+                  {isListening ? 'Listening...' : 'Click mic to speak'}
+                </Typography>
+              )}
+              {!speechSupported && (
+                <Typography variant="caption" sx={{ color: 'warning.main' }}>
+                  Voice input not supported in this browser
+                </Typography>
+              )}
             </Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }} className="text-gray-600 dark:text-gray-400">
-              💡 Tip: Ask specific questions like "How much should I save for an emergency fund?" for better advice
-            </Typography>
           </CardContent>
         </Card>
       </Container>
+
+      {/* Voice Error Snackbar */}
+      <Snackbar
+        open={showVoiceError}
+        autoHideDuration={6000}
+        onClose={handleCloseVoiceError}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseVoiceError} severity="error" sx={{ width: '100%' }}>
+          {voiceError}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

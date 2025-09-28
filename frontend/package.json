@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "NODE_OPTIONS=--openssl-legacy-provider next dev -p 3001 --experimental-https --ssl-cert ./.cert/localhost.pem --ssl-key ./.cert/localhost-key.pem",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

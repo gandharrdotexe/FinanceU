@@ -158,6 +158,17 @@ export default function MentorPage() {
  
   useEffect(() => { setIsMounted(true) }, [])
  
+  const formatTime = (value) => {
+    try {
+      const date = value instanceof Date ? value : new Date(value)
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
+    } catch (_e) {
+      return ''
+    }
+  }
+
   const quickQuestions = [
     { icon: PiggyBankIcon, text: "How much should I save each month?", category: "Savings" },
     { icon: TrendingUpIcon, text: "What's the best investment for students?", category: "Investing" },
@@ -429,7 +440,7 @@ export default function MentorPage() {
               <span className="text-white font-bold text-sm">F</span>
             </motion.div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Vikas.AI
+              FinanceU
             </span>
           </Link>
          
@@ -586,8 +597,8 @@ export default function MentorPage() {
                       maxWidth: '80%',
                       p: 2,
                       borderRadius: 2,
-                      backgroundColor: message.sender === 'user' ? '#1976d2' : '#f5f5f5',
-                      color: message.sender === 'user' ? 'white' : 'text.primary'
+                      backgroundColor: message.sender === 'user' ? '#1976d2' : (theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#f5f5f5'),
+                      color: message.sender === 'user' ? 'white' : (theme === 'dark' ? 'rgba(255,255,255,0.9)' : 'text.primary')
                     }}
                     className="bg-white dark:bg-gray-800 dark:text-gray-100"
                   >
@@ -615,9 +626,9 @@ export default function MentorPage() {
                                   />
                                 )}
                               </Box>
-                              {message.timestamp && (
+                              {isMounted && message.timestamp && (
                                 <Typography variant="caption" color="text.disabled">
-                                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {formatTime(message.timestamp)}
                                 </Typography>
                               )}
                             </Box>
@@ -635,9 +646,9 @@ export default function MentorPage() {
                                 elevation={0}
                                 sx={{
                                   p: 2,
-                                  bgcolor: 'background.paper',
+                                  bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'background.paper',
                                   border: '1px solid',
-                                  borderColor: 'divider',
+                                  borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'divider',
                                   borderRadius: 2,
                                   '& pre': {
                                     backgroundColor: theme === 'dark' ? '#2d2d2d' : '#f5f5f5',
@@ -784,7 +795,7 @@ export default function MentorPage() {
                               className="text-gray-600 dark:text-gray-400"
                               suppressHydrationWarning
                             >
-                              {isMounted ? (message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date(message.timestamp).toLocaleTimeString()) : ''}
+                              {isMounted ? formatTime(message.timestamp) : ''}
                             </Typography>
                           </Box>
                         </Box>
@@ -797,14 +808,14 @@ export default function MentorPage() {
               {isLoading && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-start' }} className="bg-white dark:bg-gray-800 dark:text-gray-100">
                   <Box sx={{
-                    backgroundColor: '#f5f5f5',
-                    color: 'text.primary',
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#f5f5f5',
+                    color: theme === 'dark' ? 'rgba(255,255,255,0.9)' : 'text.primary',
                     p: 2,
                     borderRadius: 2,
                     maxWidth: '80%'
                   }} className="bg-white dark:bg-gray-800 dark:text-gray-100">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <BotIcon sx={{ color: '#1976d2' }} />
+                      <BotIcon sx={{ color: theme === 'dark' ? '#90caf9' : '#1976d2' }} />
                       <CircularProgress size={16} />
                     </Box>
                   </Box>

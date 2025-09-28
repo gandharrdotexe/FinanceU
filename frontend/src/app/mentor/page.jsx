@@ -1098,6 +1098,8 @@
 // }
 
 
+
+
 'use client'
  
 import { useEffect, useState, useRef } from 'react'
@@ -1119,9 +1121,10 @@ import {
 } from '@mui/icons-material'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import { LogOut } from 'lucide-react'
+import { useTheme } from '../../contexts/ThemeContext'
  
 export default function MentorPage() {
-  const [theme, setTheme] = useState('light')
+  const { theme, toggleTheme } = useTheme()
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
@@ -1319,10 +1322,6 @@ export default function MentorPage() {
     { icon: CreditCardIcon, text: "Should I get a credit card?", category: "Credit" },
     { icon: LightbulbIcon, text: "How do I start budgeting?", category: "Budgeting" }
   ]
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light')
-  }
 
   const isActive = (path) => {
     return window.location.pathname === path
@@ -1731,20 +1730,12 @@ Would you like me to elaborate on any of these points?`,
               </button>
             </div>
             
-            <div className="flex justify-between items-center text-sm pt-1">
+            <div className="flex justify-between items-center text-sm">
               <div className="text-gray-500 dark:text-gray-400">
                 💡 Tip: Ask specific questions like "How much should I save for an emergency fund?" for better advice
               </div>
               {speechSupported && (
-                // <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                //   <MicIcon className="w-2 h-2" />
-                //   <p className="text-sm text-gray-500 dark:text-gray-400">
-                //     {isListening ? 'Listening...' : 'Click mic to speak'}
-                //   </p>
-                  
-                // </div>
-
-                <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 ">
+                <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   <MicIcon className="w-1.5 h-1.5" style={{ fontSize: '1rem' }} />
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {isListening ? 'Listening...' : 'Click mic to speak'}
